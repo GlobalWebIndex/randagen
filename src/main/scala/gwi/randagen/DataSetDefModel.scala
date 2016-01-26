@@ -59,6 +59,7 @@ case class TimeGenerator(pattern: String, unit: String, start: String) extends V
 case class FieldDef(name: String, valueType: String, valueGen: ValueGenerator)
 object DataSetDef {
   import upickle.default._
+  import JsonEventProducer._
 
   def serialize(dataSetDef: DataSetDef, indent: Int): String = write[DataSetDef](dataSetDef, indent)
 
@@ -81,12 +82,13 @@ object DataSetDef {
     def purchase = Seq("micro","small","medium","large")
 
     List(
-      FieldDef("time",      "String", TimeGenerator("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
-      FieldDef("gwid",      "String", CardinalityUuidGenerator(50)),
-      FieldDef("country",   "String", RandomSelectGenerator(countries.toArray)),
-      FieldDef("purchase",  "String", RandomSelectGenerator(purchase.toArray)),
-      FieldDef("section",   "String", RandomSelectGenerator(sections.toArray)),
-      FieldDef("price",     "Int",    RandomDoubleGenerator(2))
+      FieldDef("time",      StringType,   TimeGenerator("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
+      FieldDef("gwid",      StringType,   CardinalityUuidGenerator(50)),
+      FieldDef("country",   StringType,   RandomSelectGenerator(countries.toArray)),
+      FieldDef("purchase",  StringType,   RandomSelectGenerator(purchase.toArray)),
+      FieldDef("section",   StringType,   RandomSelectGenerator(sections.toArray)),
+      FieldDef("active",    BooleanType,  StrictGenerator("true")),
+      FieldDef("price",     IntType,      RandomDoubleGenerator(2))
     )
   }
 }
