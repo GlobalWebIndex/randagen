@@ -1,0 +1,8 @@
+box: l15k4/sbt
+
+build:
+  steps:
+    - script:
+        name: sbt test
+        code: |
+          cd $WERCKER_ROOT && sbt test
