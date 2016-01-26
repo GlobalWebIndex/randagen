@@ -27,11 +27,12 @@ case class RandomSelectGenerator(values: Array[String]) extends ValueGenerator {
   def gen(progress: Progress): String = values(Random.nextInt(values.length))
 }
 
-case class CardinalityUuidGenerator(rate: Int) extends ValueGenerator {
+case class CardinalityUuidGenerator(ratio: Int) extends ValueGenerator {
+  require(ratio > 0 && ratio < 100, s"Ratio $ratio is not valid, please define value between 0 - 100 exclusive !!!")
   def uuidFrom(seed: Int) = UUID.nameUUIDFromBytes(seed.toString.getBytes).toString
   def gen(progress: Progress): String = {
     val sIdx = progress.shuffledIdx
-    val realCardinality = (progress.total / 100D * rate).toInt
+    val realCardinality = BigDecimal(progress.total / 100f * ratio).setScale(0, BigDecimal.RoundingMode.HALF_UP).toIntExact
     if (sIdx <= realCardinality) uuidFrom(sIdx) else uuidFrom(sIdx-realCardinality)
   }
 }

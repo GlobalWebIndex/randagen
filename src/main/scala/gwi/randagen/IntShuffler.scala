@@ -8,6 +8,8 @@ import scala.util.Random
   *   1) Random distribution
   *   2) Zero duplication (100% cardinality)
   *
+  * It is identical to scala.util.Random.shuffle except for it avoids Boxing primitives
+  *
   * @note that for shuffling 1 billion integers you'd need 4GB+ of Heap
   *       because the primitive 32bits Ints itself take 4GBs
   *       random shuffling cannot be done lazily !!!
@@ -29,7 +31,7 @@ object IntShuffler {
     }
   }
 
-  def shuffle(arr: Array[Int]) = {
+  def shuffle[T](arr: Array[T]) = {
     def swap(i1: Int, i2: Int) = {
       val tmp = arr(i1)
       arr(i1) = arr(i2)
