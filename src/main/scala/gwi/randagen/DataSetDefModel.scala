@@ -32,7 +32,7 @@ case class CardinalityUuidGenerator(ratio: Int) extends ValueGenerator {
   def uuidFrom(seed: Int) = UUID.nameUUIDFromBytes(seed.toString.getBytes).toString
   def gen(progress: Progress): String = {
     val sIdx = progress.shuffledIdx
-    val realCardinality = BigDecimal(progress.total / 100f * ratio).setScale(0, BigDecimal.RoundingMode.HALF_UP).toIntExact
+    val realCardinality = BigDecimal(progress.total / 100D * ratio).setScale(0, BigDecimal.RoundingMode.HALF_UP).toIntExact
     if (sIdx <= realCardinality) uuidFrom(sIdx) else uuidFrom(sIdx-realCardinality)
   }
 }
@@ -55,6 +55,11 @@ case class TimeGenerator(pattern: String, unit: String, start: String) extends V
   )
   val chronoUnit = availableUnits.getOrElse(unit, throw new IllegalArgumentException(s"Time unit $unit is not supported, use ${availableUnits.keys.mkString(",")} !"))
   override def gen(progress: Progress): String = startTime.plus(progress.idx, chronoUnit).format(formatter)
+}
+
+case class WeightedSelectGenerator(values: Seq[(String, Double)]) extends ValueGenerator {
+  val sortedValues = values.sortBy(_._2)(Ordering[Double].reverse)
+  def gen(progress: Progress): String = ProbabilityDistribution.sampleElementFrom(sortedValues, probabilityDistribution = true)
 }
 
 case class FieldDef(name: String, valueType: String, valueGen: ValueGenerator)
@@ -80,13 +85,13 @@ object DataSetDef {
 
     def sections = Seq("home","sport","news","finance")
 
-    def purchase = Seq("micro","small","medium","large")
+    def purchase = Seq("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
 
     List(
       FieldDef("time",      StringType,   TimeGenerator("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
       FieldDef("gwid",      StringType,   CardinalityUuidGenerator(50)),
       FieldDef("country",   StringType,   RandomSelectGenerator(countries.toArray)),
-      FieldDef("purchase",  StringType,   RandomSelectGenerator(purchase.toArray)),
+      FieldDef("purchase",  StringType,   WeightedSelectGenerator(purchase)),
       FieldDef("section",   StringType,   RandomSelectGenerator(sections.toArray)),
       FieldDef("active",    BooleanType,  StrictGenerator("true")),
       FieldDef("price",     IntType,      RandomDoubleGenerator(2))
