@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import gwi.randagen.CommonsDistribution.RealDistributionPimp
+import gwi.randagen.ProbabilityDistribution.RealDistributionPimp
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Random}
@@ -59,15 +59,14 @@ case class TimeGenerator(pattern: String, unit: String, start: String) extends V
   override def gen(progress: Progress): String = startTime.plus(progress.idx, chronoUnit).format(formatter)
 }
 
-case class WeightedSelectGenerator(values: Seq[(String, Double)]) extends ValueGenerator {
-  val sortedValues = values.sortBy(_._2)(Ordering[Double].reverse)
-  val distribution = EnumeratedDistro(sortedValues)
+case class WeightedSelectGenerator(values: Array[(String, Double)]) extends ValueGenerator {
+  val distribution = ProbabilityDistribution.enumeratedDistro(values)
   def gen(progress: Progress): String = distribution.sample
 }
 
 case class ProbabilityDistributionGenerator(absoluteCardinality: Int, className: String, args: Seq[Double]) extends ValueGenerator {
-  val probDistFunction = CommonsDistribution(className, args).getProbabilityDistribution(absoluteCardinality)
-  val distribution = EnumeratedDistro(probDistFunction)
+  def pmf = ProbabilityDistribution(className, args).getPMF(absoluteCardinality)
+  val distribution = ProbabilityDistribution.enumeratedDistro(pmf)
   def gen(progress: Progress): String = distribution.sample.toString
 }
 
@@ -90,16 +89,14 @@ object DataSetDef {
   }
 
   def sampleDataSetDef: DataSetDef = {
-    def countries = Seq("bra","nzl","bel")
+    def countries = Array("bra","nzl","bel")
 
-    def sections = Seq("home","sport","news","finance")
-
-    def purchase = Seq("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
+    def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
 
     List(
       FieldDef("time",      StringType,   TimeGenerator("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
       FieldDef("gwid",      StringType,   CardinalityUuidGenerator(50)),
-      FieldDef("country",   StringType,   RandomSelectGenerator(countries.toArray)),
+      FieldDef("country",   StringType,   RandomSelectGenerator(countries)),
       FieldDef("purchase",  StringType,   WeightedSelectGenerator(purchase)),
       FieldDef("section",   StringType,   ProbabilityDistributionGenerator(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
       FieldDef("active",    BooleanType,  StrictGenerator("true")),
