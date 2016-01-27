@@ -20,7 +20,9 @@ AWS_SECRET_ACCESS_KEY=???
 AWS_DEFAULT_REGION=???
 ```
 
-Then you're all set, use `gwiq/randagen` docker image (use `-v` flag if you use FS and don't forget to change `-Xmx`):
+Then you're all set, use `gwiq/randagen` docker image : 
+ - use `-v` flag to make json definition and output data (in case of FS storage) accessible 
+ - don't forget to change `-Xmx` appropriately 
 
 ```
 docker run --rm --env-file=/home/ubuntu/.aws/aws.env -e JAVA_TOOL_OPTIONS=-Xmx4g gwiq/randagen ARGS
@@ -30,9 +32,9 @@ Just use real arguments instead of `ARGS` ^, examples :
 ```
 dataType   dataSet   batchSize   eventCount   storage       path          jsonDataSetDefinition
 -----------------------------------------------------------------------------------------------
-tsv         gwiq      200000      10000000    s3       bucket@foo/bar       /tmp/def.json
-csv         gwiq      200000      10000000    fs       /tmp                 /tmp/def.json
-json        gwiq      200000      10000000    fs,s3    /tmp,bucket@foo/bar  /tmp/def.json
+tsv         gwiq      200000      10000000    s3       bucket@foo/bar       sample.json
+csv         gwiq      200000      10000000    fs       /tmp                 sample.json
+json        gwiq      200000      10000000    fs,s3    /tmp,bucket@foo/bar  sample.json
 ```
 
 Or use it as a dependency : 

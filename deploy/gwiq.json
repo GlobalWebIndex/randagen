@@ -1,28 +1,28 @@
 [
    {
-      "name":"time",
-      "valueType":"String",
-      "valueGen":{
-         "$type":"gwi.randagen.TimeGenerator",
-         "pattern":"yyyy-MM-dd'T'HH:mm:ss.SSS",
-         "unit":"Millis",
-         "start":"2015-01-01T00:00:00.000"
+      "name": "time",
+      "valueType": "String",
+      "valueGen": {
+         "$type": "gwi.randagen.TimeGenerator",
+         "pattern": "yyyy-MM-dd'T'HH:mm:ss.SSS",
+         "unit": "Millis",
+         "start": "2015-01-01T00:00:00.000"
       }
    },
    {
-      "name":"gwid",
-      "valueType":"String",
-      "valueGen":{
-         "$type":"gwi.randagen.CardinalityUuidGenerator",
-         "rate":50
+      "name": "gwid",
+      "valueType": "String",
+      "valueGen": {
+         "$type": "gwi.randagen.CardinalityUuidGenerator",
+         "ratio": 50
       }
    },
    {
-      "name":"country",
-      "valueType":"String",
-      "valueGen":{
-         "$type":"gwi.randagen.RandomSelectGenerator",
-         "values":[
+      "name": "country",
+      "valueType": "String",
+      "valueGen": {
+         "$type": "gwi.randagen.RandomSelectGenerator",
+         "values": [
             "bra",
             "nzl",
             "bel",
@@ -59,37 +59,57 @@
       }
    },
    {
-      "name":"purchase",
-      "valueType":"String",
-      "valueGen":{
-         "$type":"gwi.randagen.RandomSelectGenerator",
-         "values":[
-            "micro",
-            "small",
-            "medium",
-            "large"
+      "name": "purchase",
+      "valueType": "String",
+      "valueGen": {
+         "$type": "gwi.randagen.WeightedSelectGenerator",
+         "values": [
+            [
+               "micro",
+               0.1
+            ],
+            [
+               "small",
+               0.2
+            ],
+            [
+               "medium",
+               0.4
+            ],
+            [
+               "large",
+               0.3
+            ]
          ]
       }
    },
    {
-      "name":"section",
-      "valueType":"String",
-      "valueGen":{
-         "$type":"gwi.randagen.RandomSelectGenerator",
-         "values":[
-            "home",
-            "sport",
-            "news",
-            "finance"
+      "name": "section",
+      "valueType": "String",
+      "valueGen": {
+         "$type": "gwi.randagen.ProbabilityDistributionGenerator",
+         "absoluteCardinality": 10000,
+         "className": "org.apache.commons.math3.distribution.NormalDistribution",
+         "args": [
+            0,
+            0.2
          ]
       }
    },
    {
-      "name":"price",
-      "valueType":"Int",
-      "valueGen":{
-         "$type":"gwi.randagen.RandomDoubleGenerator",
-         "precision":2
+      "name": "active",
+      "valueType": "Boolean",
+      "valueGen": {
+         "$type": "gwi.randagen.StrictGenerator",
+         "value": "true"
+      }
+   },
+   {
+      "name": "price",
+      "valueType": "Int",
+      "valueGen": {
+         "$type": "gwi.randagen.RandomDoubleGenerator",
+         "precision": 2
       }
    }
 ]
