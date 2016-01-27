@@ -47,14 +47,18 @@ object RanDaGenLauncher extends App {
 
   args.toList match {
     case dataType :: dataSetName :: batchSize :: eventCount :: storage :: path :: jsonDef :: Nil =>
+      val start = System.currentTimeMillis()
       val dataSetDef = DataSetDef.deserialize(Paths.get(jsonDef))
       val f = run(dataType, batchSize.toInt, eventCount.toInt, storage, path, dataSetDef).map { batchResponses =>
         val responsesByConsumer = batchResponses.groupBy(_.id)
         s"""
-          |persistence took :
-          |${responsesByConsumer.mapValues(_.map(_.took).sum / 1000D).mkString("\n")}
+          |total time :
+          |${(System.currentTimeMillis() - start) / 1000D} s
           |
-          |data stored took :
+          |persistence took :
+          |${responsesByConsumer.mapValues(_.map(_.took).sum / 1000D).mkString("\n")} s
+          |
+          |data stored :
           |${responsesByConsumer.mapValues(_.map(_.name).mkString(" ")).mkString("\n")}
           |
           |data size in MB :
