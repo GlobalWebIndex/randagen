@@ -58,13 +58,11 @@
       "name": "section",
       "valueType": "String",
       "valueGen": {
-         "$type": "gwi.randagen.RandomSelectGenerator",
-         "values": [
-            "home",
-            "sport",
-            "news",
-            "finance"
-         ]
+         "$type": "gwi.randagen.ProbabilityDistributionGenerator",
+         "absoluteCardinality": 10000,
+         "className": "org.apache.commons.math3.distribution.NormalDistribution",
+         "arg1": 0,
+         "arg2": 0.2
       }
    },
    {

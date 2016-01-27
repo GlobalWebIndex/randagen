@@ -20,9 +20,9 @@ class RanDaGenTestSuite extends FreeSpec with Matchers {
   "weighted sample should not cross 2 percent deviation" in {
     def assertPlusMinus(expected: Int, actual: Int)(deviation: Int) = assert(Math.abs(expected-actual) < deviation)
 
-    val dist = Seq("B" -> 0.3, "A" -> 0.5, "C" -> 0.2)
+    val dist = EnumeratedDistro(Seq("B" -> 0.3, "A" -> 0.5, "C" -> 0.2))
     val valueOccurrence = (0 to 10000)
-      .map(idx => ProbabilityDistribution.sampleElementFrom(dist, true))
+      .map(idx => dist.sample)
       .groupBy(identity)
       .mapValues(_.size)
 

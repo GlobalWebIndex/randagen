@@ -5,6 +5,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
+import gwi.randagen.CommonsDistribution.RealDistributionPimp
+
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Random}
 
@@ -59,7 +61,14 @@ case class TimeGenerator(pattern: String, unit: String, start: String) extends V
 
 case class WeightedSelectGenerator(values: Seq[(String, Double)]) extends ValueGenerator {
   val sortedValues = values.sortBy(_._2)(Ordering[Double].reverse)
-  def gen(progress: Progress): String = ProbabilityDistribution.sampleElementFrom(sortedValues, probabilityDistribution = true)
+  val distribution = EnumeratedDistro(sortedValues)
+  def gen(progress: Progress): String = distribution.sample
+}
+
+case class ProbabilityDistributionGenerator(absoluteCardinality: Int, className: String, arg1: Double, arg2: Double) extends ValueGenerator {
+  val probDistFunction = CommonsDistribution(className, arg1, arg2).getProbabilityDistribution(absoluteCardinality)
+  val distribution = EnumeratedDistro(probDistFunction)
+  def gen(progress: Progress): String = distribution.sample.toString
 }
 
 case class FieldDef(name: String, valueType: String, valueGen: ValueGenerator)
@@ -92,7 +101,7 @@ object DataSetDef {
       FieldDef("gwid",      StringType,   CardinalityUuidGenerator(50)),
       FieldDef("country",   StringType,   RandomSelectGenerator(countries.toArray)),
       FieldDef("purchase",  StringType,   WeightedSelectGenerator(purchase)),
-      FieldDef("section",   StringType,   RandomSelectGenerator(sections.toArray)),
+      FieldDef("section",   StringType,   ProbabilityDistributionGenerator(10000, "org.apache.commons.math3.distribution.NormalDistribution", 0D, 0.2)),
       FieldDef("active",    BooleanType,  StrictGenerator("true")),
       FieldDef("price",     IntType,      RandomDoubleGenerator(2))
     )
