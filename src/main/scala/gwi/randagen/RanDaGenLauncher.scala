@@ -22,9 +22,9 @@ object RanDaGenLauncher extends App {
 
   private def producerOf(dataType: String, dataSetDef: DataSetDef) = dataType match {
     case "json" =>
-      JsonEventProducer(dataSetDef)
+      EventProducer.ofJson(dataSetDef)
     case extension =>
-      DsvEventProducer(extension, dataSetDef)
+      EventProducer.ofDsv(extension, dataSetDef)
   }
 
   private def consumersFor(storagePaths: List[(String, String)]) = storagePaths.map {

@@ -5,7 +5,27 @@ sealed trait EventProducer {
   def produce(progress: Progress): String
 }
 
-case class JsonEventProducer(fieldDefs: DataSetDef) extends EventProducer {
+object EventProducer {
+  /**
+    * FieldDefs has `count` property which specifies into how many fields should this definition be expanded
+    * All fields will be identical with name suffixed with number, a value will be generated for each field extra
+    */
+  private def unfold(fieldDefs: DataSetDef): DataSetDef = {
+    fieldDefs.flatMap {
+      case FieldDef(name, valType, count, gen) if count > 1 =>
+        (1 to count).map( idx => FieldDef(s"${name}_$idx", valType, count, gen))
+      case fieldDef if fieldDef.count == 1 =>
+        fieldDef :: Nil
+      case fieldDef =>
+        throw new IllegalArgumentException(s"Field $fieldDefs is not valid, count must be greater than 0 !!!")
+    }
+  }
+
+  def ofJson(fieldDefs: DataSetDef): JsonEventProducer = JsonEventProducer(unfold(fieldDefs))
+  def ofDsv(extension: String, fieldDefs: DataSetDef): DsvEventProducer = DsvEventProducer(extension, unfold(fieldDefs))
+}
+
+case class JsonEventProducer private[randagen](fieldDefs: DataSetDef) extends EventProducer {
   import JsonEventProducer._
   def extension: String = "json"
   def produce(progress: Progress): String =
@@ -28,7 +48,7 @@ object JsonEventProducer {
   val BooleanType = "Boolean"
 }
 
-case class DsvEventProducer(val extension: String, fieldDefs: DataSetDef) extends EventProducer {
+case class DsvEventProducer private[randagen](val extension: String, fieldDefs: DataSetDef) extends EventProducer {
   import DsvEventProducer._
   lazy val sep: String = extension match {
     case CsvType => ","
