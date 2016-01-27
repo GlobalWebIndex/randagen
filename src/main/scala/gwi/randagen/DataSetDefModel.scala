@@ -65,8 +65,8 @@ case class WeightedSelectGenerator(values: Seq[(String, Double)]) extends ValueG
   def gen(progress: Progress): String = distribution.sample
 }
 
-case class ProbabilityDistributionGenerator(absoluteCardinality: Int, className: String, arg1: Double, arg2: Double) extends ValueGenerator {
-  val probDistFunction = CommonsDistribution(className, arg1, arg2).getProbabilityDistribution(absoluteCardinality)
+case class ProbabilityDistributionGenerator(absoluteCardinality: Int, className: String, args: Seq[Double]) extends ValueGenerator {
+  val probDistFunction = CommonsDistribution(className, args).getProbabilityDistribution(absoluteCardinality)
   val distribution = EnumeratedDistro(probDistFunction)
   def gen(progress: Progress): String = distribution.sample.toString
 }
@@ -101,7 +101,7 @@ object DataSetDef {
       FieldDef("gwid",      StringType,   CardinalityUuidGenerator(50)),
       FieldDef("country",   StringType,   RandomSelectGenerator(countries.toArray)),
       FieldDef("purchase",  StringType,   WeightedSelectGenerator(purchase)),
-      FieldDef("section",   StringType,   ProbabilityDistributionGenerator(10000, "org.apache.commons.math3.distribution.NormalDistribution", 0D, 0.2)),
+      FieldDef("section",   StringType,   ProbabilityDistributionGenerator(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
       FieldDef("active",    BooleanType,  StrictGenerator("true")),
       FieldDef("price",     IntType,      RandomDoubleGenerator(2))
     )

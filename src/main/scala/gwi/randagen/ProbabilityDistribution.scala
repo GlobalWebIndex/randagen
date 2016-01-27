@@ -43,15 +43,14 @@ object CommonsDistribution {
 
   import org.apache.commons.math3.distribution.RealDistribution
 
-  def apply(className: String, arg1: Double, arg2: Double): RealDistribution = Try {
-    val args = Seq[lang.Double](new lang.Double(arg1), new lang.Double(arg2))
+  def apply(className: String, args: Seq[Double]): RealDistribution = Try {
     Class
       .forName(className)
-      .getConstructor(classOf[Double], classOf[Double])
-      .newInstance(args: _*)
+      .getConstructor(args.map(_ => classOf[Double]):_*)
+      .newInstance(args.map(new lang.Double(_)): _*)
   } match {
     case Success(instance) => instance.asInstanceOf[RealDistribution]
-    case Failure(ex) => throw new IllegalArgumentException(s"Unable to instantiate $className with arguments $arg1 and $arg2 !!!", ex)
+    case Failure(ex) => throw new IllegalArgumentException(s"Unable to instantiate $className with arguments ${args.mkString(",")} !!!", ex)
   }
 
   implicit class RealDistributionPimp(underlying: RealDistribution) {
