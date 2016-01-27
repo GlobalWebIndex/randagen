@@ -32,7 +32,7 @@ object Build extends sbt.Build {
         Some("S3 Snapshots" at "s3://maven.globalwebindex.net.s3-website-eu-west-1.amazonaws.com/snapshots")
     },
     pomExtra :=
-      <url>https://github.com/GlobalWebIndex/data-generator</url>
+      <url>https://github.com/GlobalWebIndex/randagen</url>
         <licenses>
           <license>
             <name>The MIT License (MIT)</name>
@@ -41,8 +41,8 @@ object Build extends sbt.Build {
           </license>
         </licenses>
         <scm>
-          <url>git@github.com:GlobalWebIndex/data-generator.git</url>
-          <connection>scm:git:git@github.com:GlobalWebIndex/data-generator.git</connection>
+          <url>git@github.com:GlobalWebIndex/randagen.git</url>
+          <connection>scm:git:git@github.com:GlobalWebIndex/randagen.git</connection>
         </scm>
         <developers>
           <developer>
