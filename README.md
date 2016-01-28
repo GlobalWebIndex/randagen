@@ -44,4 +44,4 @@ Or use it as a dependency :
 "net.globalwebindex" %% "randagen" % "0.1-SNAPSHOT"
 ```
 
-See example data-set sample [definition](deploy/sample.json) :
+See example data-set sample [definition](deploy/sample.json) and this is the [output](sample.out)

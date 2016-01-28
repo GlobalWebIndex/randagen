@@ -2,8 +2,9 @@
    {
       "name": "time",
       "valueType": "String",
-      "valueGen": {
-         "$type": "gwi.randagen.TimeGenerator",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.TimeStamp",
          "pattern": "yyyy-MM-dd'T'HH:mm:ss.SSS",
          "unit": "Millis",
          "start": "2015-01-01T00:00:00.000"
@@ -11,17 +12,19 @@
    },
    {
       "name": "gwid",
-      "valueType": "String",
-      "valueGen": {
-         "$type": "gwi.randagen.CardinalityUuidGenerator",
+      "valueType": "Uuid",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.Cardinality",
          "ratio": 50
       }
    },
    {
       "name": "country",
       "valueType": "String",
-      "valueGen": {
-         "$type": "gwi.randagen.RandomSelectGenerator",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.RandomSelect",
          "values": [
             "bra",
             "nzl",
@@ -61,8 +64,9 @@
    {
       "name": "purchase",
       "valueType": "String",
-      "valueGen": {
-         "$type": "gwi.randagen.WeightedSelectGenerator",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.WeightedSelect",
          "values": [
             [
                "micro",
@@ -86,9 +90,10 @@
    {
       "name": "section",
       "valueType": "String",
-      "valueGen": {
-         "$type": "gwi.randagen.ProbabilityDistributionGenerator",
-         "absoluteCardinality": 10000,
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.ProbabilityDistribution",
+         "dataPointsCount": 10000,
          "className": "org.apache.commons.math3.distribution.NormalDistribution",
          "args": [
             0,
@@ -99,16 +104,32 @@
    {
       "name": "active",
       "valueType": "Boolean",
-      "valueGen": {
-         "$type": "gwi.randagen.StrictGenerator",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.Constant",
          "value": "true"
+      }
+   },
+   {
+      "name": "kv",
+      "valueType": "String",
+      "count": 3,
+      "value": {
+         "$type": "gwi.randagen.ProbabilityDistribution",
+         "dataPointsCount": 10,
+         "className": "org.apache.commons.math3.distribution.NormalDistribution",
+         "args": [
+            0,
+            0.2
+         ]
       }
    },
    {
       "name": "price",
       "valueType": "Int",
-      "valueGen": {
-         "$type": "gwi.randagen.RandomDoubleGenerator",
+      "count": 1,
+      "value": {
+         "$type": "gwi.randagen.RandomDouble",
          "precision": 2
       }
    }
