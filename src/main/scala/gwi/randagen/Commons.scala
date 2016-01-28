@@ -5,7 +5,7 @@ import org.apache.commons.math3.distribution.{EnumeratedDistribution, RealDistri
 import org.apache.commons.math3.util.Pair
 import scala.util.{Failure, Success, Try}
 
-object ProbabilityDistribution {
+object Commons {
 
   def apply(className: String, args: Seq[Double]): RealDistribution = Try {
     Class

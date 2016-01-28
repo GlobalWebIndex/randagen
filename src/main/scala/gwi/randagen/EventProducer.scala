@@ -30,7 +30,7 @@ case class JsonEventProducer private[randagen](fieldDefs: DataSetDef) extends Ev
   def extension: String = "json"
   def produce(progress: Progress): String =
     fieldDefs.map { fieldDef =>
-      def generateValue = fieldDef.valueGen.gen(progress)
+      def generateValue = fieldDef.value.gen(progress)
       def formatValue =
         fieldDef.valueType match {
           case StringType => s"""\"$generateValue\""""
@@ -55,7 +55,7 @@ case class DsvEventProducer private[randagen](val extension: String, fieldDefs: 
     case TsvType => "\t"
     case x => throw new IllegalArgumentException(s"Extension $x not supported, use space or tab as a delimiter !")
   }
-  def produce(progress: Progress): String = fieldDefs.map(_.valueGen.gen(progress)).mkString("", sep, "\n")
+  def produce(progress: Progress): String = fieldDefs.map(_.value.gen(progress)).mkString("", sep, "\n")
 }
 
 object DsvEventProducer {

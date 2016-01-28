@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import gwi.randagen.ProbabilityDistribution.RealDistributionPimp
+import gwi.randagen.Commons.RealDistributionPimp
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try, Random}
@@ -17,67 +17,66 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
   *       For instance a single field can be generated 1000 times (1000 columns) sharing a single generator
   *       So that calling generator 1000 times for a single row shouldn't affect results at all
   */
-sealed trait ValueGenerator {
+sealed trait Value {
   def gen(progress: Progress): String
 }
 
-case class StrictGenerator(value: String) extends ValueGenerator {
+case class Constant(value: String) extends Value {
   def gen(progress: Progress): String = value
 }
 
-case class RandomDoubleGenerator(precision: Int) extends ValueGenerator {
+case class RandomDouble(precision: Int) extends Value {
   def randomDouble = BigDecimal(Random.nextDouble()).setScale(precision, BigDecimal.RoundingMode.HALF_UP).toString
   def gen(progress: Progress): String = randomDouble
 }
 
-case class RandomSelectGenerator(values: Array[String]) extends ValueGenerator {
+case class RandomSelect(values: Array[String]) extends Value {
   def gen(progress: Progress): String = values(Random.nextInt(values.length))
 }
 
-case class CardinalityUuidGenerator(ratio: Int) extends ValueGenerator {
+//TODO some Values should have generators !!! like Cardinality UUID
+case class CardinalityUuid(ratio: Int) extends Value {
   require(ratio > 0 && ratio < 100, s"Ratio $ratio is not valid, please define value between 0 - 100 exclusive !!!")
-  var realCardinality: Long = 0 // strictly for performance reasons, just lazy initialization, race conditions wouldn't matter here
   def uuidFrom(seed: Long) = UUID.nameUUIDFromBytes(seed.toString.getBytes).toString
   def gen(progress: Progress): String = {
-    if (realCardinality == 0)
-      realCardinality = BigDecimal(progress.total / 100D * ratio).setScale(0, BigDecimal.RoundingMode.HALF_UP).toLongExact
+    val realCardinality = (progress.total / 100D * ratio).toInt
     val sIdx = progress.shuffledIdx
     if (sIdx <= realCardinality) uuidFrom(sIdx) else uuidFrom(sIdx-realCardinality)
   }
 }
 
-case class TimeGenerator(pattern: String, unit: String, start: String) extends ValueGenerator {
+case class TimeStamp(pattern: String, unit: String, start: String) extends Value {
   import java.time.temporal.ChronoUnit._
+  def availableUnits = ListMap(
+    "Nanos"    -> NANOS,
+    "Micros"   -> MICROS,
+    "Millis"   -> MILLIS,
+    "Seconds"  -> SECONDS,
+    "Minutes"  -> MINUTES,
+    "Hours"    -> HOURS,
+    "Days"     -> DAYS,
+    "Weeks"    -> WEEKS,
+    "Months"   -> MONTHS,
+    "Years"    -> YEARS
+  )
   val formatter = DateTimeFormatter.ofPattern(pattern)
   val startTime = LocalDateTime.from(formatter.parse(start))
-  val availableUnits = ListMap(
-   "Nanos"    -> NANOS,
-   "Micros"   -> MICROS,
-   "Millis"   -> MILLIS,
-   "Seconds"  -> SECONDS,
-   "Minutes"  -> MINUTES,
-   "Hours"    -> HOURS,
-   "Days"     -> DAYS,
-   "Weeks"    -> WEEKS,
-   "Months"   -> MONTHS,
-   "Years"    -> YEARS
-  )
   val chronoUnit = availableUnits.getOrElse(unit, throw new IllegalArgumentException(s"Time unit $unit is not supported, use ${availableUnits.keys.mkString(",")} !"))
-  override def gen(progress: Progress): String = startTime.plus(progress.idx, chronoUnit).format(formatter)
+  def gen(progress: Progress): String = startTime.plus(progress.idx, chronoUnit).format(formatter)
 }
 
-case class WeightedSelectGenerator(values: Array[(String, Double)]) extends ValueGenerator {
-  val distribution = ProbabilityDistribution.enumeratedDistro(values)
+case class WeightedSelect(values: Array[(String, Double)]) extends Value {
+  val distribution = Commons.enumeratedDistro(values)
   def gen(progress: Progress): String = distribution.sample
 }
 
-case class ProbabilityDistributionGenerator(absoluteCardinality: Int, className: String, args: Seq[Double]) extends ValueGenerator {
-  def pmf = ProbabilityDistribution(className, args).getPMF(absoluteCardinality)
-  val distribution = ProbabilityDistribution.enumeratedDistro(pmf)
+case class ProbabilityDistribution(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
+  def pmf = Commons(className, args).getPMF(dataPointsCount)
+  val distribution = Commons.enumeratedDistro(pmf)
   def gen(progress: Progress): String = distribution.sample.toString
 }
 
-case class FieldDef(name: String, valueType: String, count: Int, valueGen: ValueGenerator)
+case class FieldDef(name: String, valueType: String, count: Int, value: Value)
 object DataSetDef {
   import upickle.default._
   import JsonEventProducer._
@@ -101,14 +100,14 @@ object DataSetDef {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
 
     List(
-      FieldDef("time",     StringType,  1,    TimeGenerator("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
-      FieldDef("gwid",     StringType,  1,    CardinalityUuidGenerator(50)),
-      FieldDef("country",  StringType,  1,    RandomSelectGenerator(countries)),
-      FieldDef("purchase", StringType,  1,    WeightedSelectGenerator(purchase)),
-      FieldDef("section",  StringType,  1,    ProbabilityDistributionGenerator(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
-      FieldDef("active",   BooleanType, 1,    StrictGenerator("true")),
-      FieldDef("kv",       StringType,  3,    ProbabilityDistributionGenerator(10, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
-      FieldDef("price",    IntType,     1,    RandomDoubleGenerator(2))
+      FieldDef("time",     StringType,  1,    TimeStamp("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
+      FieldDef("gwid",     StringType,  1,    CardinalityUuid(50)),
+      FieldDef("country",  StringType,  1,    RandomSelect(countries)),
+      FieldDef("purchase", StringType,  1,    WeightedSelect(purchase)),
+      FieldDef("section",  StringType,  1,    ProbabilityDistribution(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
+      FieldDef("active",   BooleanType, 1,    Constant("true")),
+      FieldDef("kv",       StringType,  3,    ProbabilityDistribution(10, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
+      FieldDef("price",    IntType,     1,    RandomDouble(2))
     )
   }
 }
