@@ -1,7 +1,8 @@
 package gwi.randagen
 
+import java.util.SplittableRandom
+
 import scala.collection.{AbstractIterator, Iterator}
-import scala.util.Random
 
 /**
   * Shuffles integers randomly. Important for generating data with
@@ -32,13 +33,14 @@ object IntShuffler {
   }
 
   def shuffle[T](arr: Array[T]) = {
+    val rd = new SplittableRandom()
     def swap(i1: Int, i2: Int) = {
       val tmp = arr(i1)
       arr(i1) = arr(i2)
       arr(i2) = tmp
     }
     for (n <- arr.length to 2 by -1) {
-      swap(n - 1, Random.nextInt(n))
+      swap(n - 1, rd.nextInt(n))
     }
     arr
   }

@@ -1,5 +1,7 @@
 package gwi.randagen
 
+import java.util.UUID
+
 sealed trait EventProducer {
   def extension: String
   def produce(progress: Progress): String
@@ -34,6 +36,7 @@ case class JsonEventProducer private[randagen](fieldDefs: DataSetDef) extends Ev
       def formatValue =
         fieldDef.valueType match {
           case StringType => s"""\"$generateValue\""""
+          case UuidType => s"""\"${UUID.nameUUIDFromBytes(generateValue.getBytes).toString}\""""
           case IntType => generateValue
           case BooleanType => generateValue
           case x => throw new IllegalArgumentException(s"Supported field valueTypes are only : 'String' and 'Int'. Not $x !")
@@ -43,6 +46,7 @@ case class JsonEventProducer private[randagen](fieldDefs: DataSetDef) extends Ev
 }
 
 object JsonEventProducer {
+  val UuidType = "Uuid"
   val StringType = "String"
   val IntType = "Int"
   val BooleanType = "Boolean"

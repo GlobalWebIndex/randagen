@@ -3,12 +3,12 @@ package gwi.randagen
 import java.nio.file.{Files, Path}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.UUID
+import java.util.SplittableRandom
 
 import gwi.randagen.Commons.RealDistributionPimp
 
 import scala.collection.immutable.ListMap
-import scala.util.{Failure, Success, Try, Random}
+import scala.util.{Failure, Success, Try}
 
 case class Progress(shuffledIdx: Int, idx: Int, total: Int)
 
@@ -26,22 +26,22 @@ case class Constant(value: String) extends Value {
 }
 
 case class RandomDouble(precision: Int) extends Value {
-  def randomDouble = BigDecimal(Random.nextDouble()).setScale(precision, BigDecimal.RoundingMode.HALF_UP).toString
+  val rd = new SplittableRandom()
+  def randomDouble = BigDecimal(rd.nextDouble()).setScale(precision, BigDecimal.RoundingMode.HALF_UP).toString
   def gen(progress: Progress): String = randomDouble
 }
 
 case class RandomSelect(values: Array[String]) extends Value {
-  def gen(progress: Progress): String = values(Random.nextInt(values.length))
+  val rd = new SplittableRandom()
+  def gen(progress: Progress): String = values(rd.nextInt(values.length))
 }
 
-//TODO some Values should have generators !!! like Cardinality UUID
-case class CardinalityUuid(ratio: Int) extends Value {
+case class Cardinality(ratio: Int) extends Value {
   require(ratio > 0 && ratio < 100, s"Ratio $ratio is not valid, please define value between 0 - 100 exclusive !!!")
-  def uuidFrom(seed: Long) = UUID.nameUUIDFromBytes(seed.toString.getBytes).toString
   def gen(progress: Progress): String = {
     val realCardinality = (progress.total / 100D * ratio).toInt
     val sIdx = progress.shuffledIdx
-    if (sIdx <= realCardinality) uuidFrom(sIdx) else uuidFrom(sIdx-realCardinality)
+    if (sIdx <= realCardinality) sIdx.toString else (sIdx-realCardinality).toString
   }
 }
 
@@ -101,7 +101,7 @@ object DataSetDef {
 
     List(
       FieldDef("time",     StringType,  1,    TimeStamp("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
-      FieldDef("gwid",     StringType,  1,    CardinalityUuid(50)),
+      FieldDef("gwid",     UuidType,    1,    Cardinality(50)),
       FieldDef("country",  StringType,  1,    RandomSelect(countries)),
       FieldDef("purchase", StringType,  1,    WeightedSelect(purchase)),
       FieldDef("section",  StringType,  1,    ProbabilityDistribution(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
