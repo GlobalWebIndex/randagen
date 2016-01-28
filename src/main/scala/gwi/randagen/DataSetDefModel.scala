@@ -70,8 +70,14 @@ case class WeightedSelect(values: Array[(String, Double)]) extends Value {
   def gen(progress: Progress): String = distribution.sample
 }
 
-case class ProbabilityDistribution(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
-  def pmf = Commons(className, args).getPMF(dataPointsCount)
+case class DistributedInteger(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
+  def pmf = Commons.intDistro(className, args).getPMF(dataPointsCount)
+  val distribution = Commons.enumeratedDistro(pmf)
+  def gen(progress: Progress): String = distribution.sample.toString
+}
+
+case class DistributedDouble(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
+  def pmf = Commons.realDistro(className, args).getPMF(dataPointsCount)
   val distribution = Commons.enumeratedDistro(pmf)
   def gen(progress: Progress): String = distribution.sample.toString
 }
@@ -104,9 +110,9 @@ object DataSetDef {
       FieldDef("gwid",     UuidType,    1,    Cardinality(50)),
       FieldDef("country",  StringType,  1,    RandomSelect(countries)),
       FieldDef("purchase", StringType,  1,    WeightedSelect(purchase)),
-      FieldDef("section",  StringType,  1,    ProbabilityDistribution(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
+      FieldDef("section",  StringType,  1,    DistributedDouble(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
       FieldDef("active",   BooleanType, 1,    Constant("true")),
-      FieldDef("kv",       StringType,  3,    ProbabilityDistribution(10, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
+      FieldDef("kv",       StringType,  3,    DistributedDouble(10, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
       FieldDef("price",    IntType,     1,    RandomDouble(2))
     )
   }
