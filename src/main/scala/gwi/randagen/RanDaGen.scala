@@ -13,7 +13,7 @@ import scala.concurrent.{Await, Future}
 object RanDaGen {
 
   def generate(batchSize: Int, maxBatchByteSize: Int, eventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] = {
-    IntShuffler.shuffledIterator(0, eventCount)
+    Utils.shuffledIterator(0, eventCount)
       .zipWithIndex
       .foldLeft(Future.successful(List.empty[BatchRes]), 0, new ArrayBuffer[Array[Byte]](batchSize)) { case ((flushingFuture, byteSize, acc), (shuffledIdx, idx)) =>
         def pullEvent = producer.produce(Progress(shuffledIdx, idx, eventCount))

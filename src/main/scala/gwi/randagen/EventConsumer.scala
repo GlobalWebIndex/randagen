@@ -15,15 +15,6 @@ case class BatchRes(id: String, name: String, byteSize: Int, took: Long)
 
 sealed trait EventConsumer {
   def consume(req: BatchReq): Future[BatchRes]
-  /**
-    * @note that this method exists merely because it is the only way to be sure that SDK doesn't perform Boxing of primitives
-    */
-  def flattenArray(byteSize: Int, xs: Iterable[Array[Byte]]): Array[Byte] =
-    xs.foldLeft((0, new Array[Byte](byteSize))) { case ((arrIdx, targetArr), event) =>
-      val size = event.length
-      System.arraycopy(event, 0, targetArr, arrIdx, size)
-      size+arrIdx -> targetArr
-    }._2
 }
 
 case class FsEventConsumer(targetDir: Path) extends EventConsumer {
@@ -33,7 +24,7 @@ case class FsEventConsumer(targetDir: Path) extends EventConsumer {
   def consume(req: BatchReq): Future[BatchRes] = Future[BatchRes] {
     val start = System.currentTimeMillis()
     val BatchReq(name, size, load) = req
-    val bytes = flattenArray(size, load)
+    val bytes = Utils.flattenArray(load, Option(size))
     val byteSize = bytes.length
     val file = targetDir.resolve(name).toFile
     require(byteSize > 0, s"Please don't flush empty content to file ${file.getAbsolutePath}")
@@ -48,7 +39,7 @@ case class S3EventConsumer(bucket: String, path: String, s3: AmazonS3Client) ext
   def consume(req: BatchReq): Future[BatchRes] = Future[BatchRes] {
     val start = System.currentTimeMillis()
     val BatchReq(key, size, load) = req
-    val bytes = flattenArray(size, load)
+    val bytes = Utils.flattenArray(load, Option(size))
     val metaData = new ObjectMetadata()
     val fullPath = s"$path/$key"
     metaData.setContentLength(size)

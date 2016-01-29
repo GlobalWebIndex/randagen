@@ -5,14 +5,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
-/**
-  * Mappers are functions that take Distribution sample (usually Int and Double) as input
-  * and generate some meaningful value as output (uuid, timeStamp, rounded double for pricing, etc.)
-  */
-trait Mapper[-I,+O] extends ((I) => O) {
-  def apply(v: I): O
-}
-
 case class TimeMapper(pattern: String, unit: ChronoUnit, start: LocalDateTime = LocalDateTime.now()) extends Mapper[Int,String] {
   val formatter = DateTimeFormatter.ofPattern(pattern)
   def apply(v: Int): String = start.plus(v, unit).format(formatter)

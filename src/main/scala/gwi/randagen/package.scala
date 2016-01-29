@@ -9,4 +9,10 @@ package object randagen {
 
   type FieldDef = Progress => String
   type EventDef = List[FieldDef]
+
+  /**
+    * Mappers are functions that take Distribution sample (usually Int and Double) as input
+    * and generate some meaningful value as output (uuid, timeStamp, rounded double for pricing, etc.)
+    */
+  type Mapper[I,O] = (I => O)
 }
