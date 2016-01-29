@@ -111,7 +111,6 @@ object Build extends sbt.Build {
       autoCompilerPlugins := true,
       cancelable in Global := true,
       libraryDependencies ++= awsDeps ++ testingDeps ++ Seq(
-        "com.lihaoyi" %% "upickle" % "0.3.7",
         "org.apache.commons" % "commons-math3" % "3.6"
       )
     ).settings(testSettings ++ publishSettings)

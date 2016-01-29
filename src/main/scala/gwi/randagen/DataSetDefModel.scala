@@ -1,119 +1,126 @@
 package gwi.randagen
 
-import java.nio.file.{Files, Path}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.SplittableRandom
+import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, Month}
 
-import gwi.randagen.Commons.RealDistributionPimp
+import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDistribution}
 
-import scala.collection.immutable.ListMap
-import scala.util.{Failure, Success, Try}
-
+/**
+  * Distributions are sampled with progress of iteration mostly because of performance reasons, it allows for data distribution
+  * without any CPU ticks. Since event can have thousands of fields, it is obvious that each field cannot hold it's own
+  * Probability Mass Function. It would lead to 1000 000 of samplings for 1000 of events with 1000 of fields
+  * Also you wouldn't be able to control cardinality other than 100%
+  */
 case class Progress(shuffledIdx: Int, idx: Int, total: Int)
 
 /**
-  * @note that ValueGenerator implementations should be stateless and idempotent.
-  *       For instance a single field can be generated 1000 times (1000 columns) sharing a single generator
-  *       So that calling generator 1000 times for a single row shouldn't affect results at all
+  * FieldDef is a definition of a single field/column
+  *
+  * @note that it has `count` property which specifies into how many fields should this definition be expanded to
+  * All fields will be identical with name suffixed with number, a value will be generated for each field extra
   */
-sealed trait Value {
-  def gen(progress: Progress): String
-}
+object FieldDef {
+  def apply[I,O](name: String, format: String, count: Int, dist: () => Distribution[I], mapper: () => Mapper[I,O]): IndexedSeq[FieldDef] = {
+    def json(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String = {
+      val value = mapper.apply(dist.sample(progress))
+      def formatValue =
+        if (value.isInstanceOf[String])
+          s"""\"$value\""""
+        else
+          value
+      s"""\"$name\": $formatValue"""
+    }
 
-case class Constant(value: String) extends Value {
-  def gen(progress: Progress): String = value
-}
+    def dsv(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String =
+      mapper.apply(dist.sample(progress)).toString
 
-case class RandomDouble(precision: Int) extends Value {
-  val rd = new SplittableRandom()
-  def randomDouble = BigDecimal(rd.nextDouble()).setScale(precision, BigDecimal.RoundingMode.HALF_UP).toString
-  def gen(progress: Progress): String = randomDouble
-}
+    def formatBy(fn: (String, Distribution[I], Mapper[I, O]) => FieldDef) = {
+      if (count > 1)
+        (0 until count).map (idx => fn(s"${name}_$idx", dist(), mapper()))
+      else
+        IndexedSeq(fn(name, dist(), mapper()))
+    }
 
-case class RandomSelect(values: Array[String]) extends Value {
-  val rd = new SplittableRandom()
-  def gen(progress: Progress): String = values(rd.nextInt(values.length))
-}
-
-case class Cardinality(ratio: Int) extends Value {
-  require(ratio > 0 && ratio < 100, s"Ratio $ratio is not valid, please define value between 0 - 100 exclusive !!!")
-  def gen(progress: Progress): String = {
-    val realCardinality = (progress.total / 100D * ratio).toInt
-    val sIdx = progress.shuffledIdx
-    if (sIdx <= realCardinality) sIdx.toString else (sIdx-realCardinality).toString
-  }
-}
-
-case class TimeStamp(pattern: String, unit: String, start: String) extends Value {
-  import java.time.temporal.ChronoUnit._
-  def availableUnits = ListMap(
-    "Nanos"    -> NANOS,
-    "Micros"   -> MICROS,
-    "Millis"   -> MILLIS,
-    "Seconds"  -> SECONDS,
-    "Minutes"  -> MINUTES,
-    "Hours"    -> HOURS,
-    "Days"     -> DAYS,
-    "Weeks"    -> WEEKS,
-    "Months"   -> MONTHS,
-    "Years"    -> YEARS
-  )
-  val formatter = DateTimeFormatter.ofPattern(pattern)
-  val startTime = LocalDateTime.from(formatter.parse(start))
-  val chronoUnit = availableUnits.getOrElse(unit, throw new IllegalArgumentException(s"Time unit $unit is not supported, use ${availableUnits.keys.mkString(",")} !"))
-  def gen(progress: Progress): String = startTime.plus(progress.idx, chronoUnit).format(formatter)
-}
-
-case class WeightedSelect(values: Array[(String, Double)]) extends Value {
-  val distribution = Commons.enumeratedDistro(values)
-  def gen(progress: Progress): String = distribution.sample
-}
-
-case class DistributedInteger(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
-  def pmf = Commons.intDistro(className, args).getPMF(dataPointsCount)
-  val distribution = Commons.enumeratedDistro(pmf)
-  def gen(progress: Progress): String = distribution.sample.toString
-}
-
-case class DistributedDouble(dataPointsCount: Int, className: String, args: Seq[Double]) extends Value {
-  def pmf = Commons.realDistro(className, args).getPMF(dataPointsCount)
-  val distribution = Commons.enumeratedDistro(pmf)
-  def gen(progress: Progress): String = distribution.sample.toString
-}
-
-case class FieldDef(name: String, valueType: String, count: Int, value: Value)
-object DataSetDef {
-  import upickle.default._
-  import JsonEventProducer._
-
-  def serialize(dataSetDef: DataSetDef, indent: Int): String = write[DataSetDef](dataSetDef, indent)
-
-  def deserialize(jsonPath: Path): DataSetDef = {
-    require(jsonPath.toFile.exists(), s"File $jsonPath does not exists!")
-    val json = new String(Files.readAllBytes(jsonPath))
-    Try(read[DataSetDef](json)) match {
-      case Success(dataSetDef) =>
-        dataSetDef
-      case Failure(ex) =>
-        throw new IllegalArgumentException(s"Please fix your data-set definition, example :\n" + serialize(sampleDataSetDef, 4), ex)
+    format match {
+      case "json" => formatBy(json)
+      case "dsv" => formatBy(dsv)
+      case x => throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
     }
   }
+}
 
-  def sampleDataSetDef: DataSetDef = {
-    def countries = Array("bra","nzl","bel")
+trait EventProducer {
+  def extension: String
+  def produce(progress: Progress): String
+  def fieldDefs: EventDef
+}
+trait DsvEventProducer extends EventProducer {
+  def delimiter: String
+  def produce(progress: Progress): String = fieldDefs.map(_(progress)).mkString("", delimiter, "\n")
+}
+case class JsonEventProducer(val fieldDefs: EventDef) extends EventProducer {
+  def extension: String = "json"
+  def produce(progress: Progress): String = fieldDefs.map(_(progress)).mkString("{", ", ", "}")
+}
+case class CsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
+  val delimiter = ","
+  val extension = "csv"
+}
+case class TsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
+  val delimiter = "\t"
+  val extension = "csv"
+}
 
+object EventProducer {
+
+  def get(name: String, format: String): EventProducer = Map(
+    "sample" -> sample(format)
+  ).get(name)
+    .map[EventProducer] {
+      case fieldDef if format == "json" => JsonEventProducer(fieldDef)
+      case fieldDef if format == "csv"  => CsvEventProducer(fieldDef)
+      case fieldDef if format == "tsv"  => TsvEventProducer(fieldDef)
+    }.getOrElse(throw new IllegalArgumentException(s"DataSet definition $name does not exist !!!"))
+
+  private def sample(format: String): EventDef = {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
+    def countries = {
+      val list = List(
+        "bra","nzl","bel","bgr","idn","egy","tur","nor","pol","jpn","esp","irl","cze","dnk","che","nld",
+        "ita","rus","pri","deu","eur","pry","usa","dom","gtm","ury","col","fra","isr","arg","mex","gbr"
+      )
+      list.zip(list.foldLeft(List(0.1)) { case (acc, _) => (acc.head * 2) :: acc }).toArray
+    }
 
-    List(
-      FieldDef("time",     StringType,  1,    TimeStamp("yyyy-MM-dd'T'HH:mm:ss.SSS", "Millis", "2015-01-01T00:00:00.000")),
-      FieldDef("gwid",     UuidType,    1,    Cardinality(50)),
-      FieldDef("country",  StringType,  1,    RandomSelect(countries)),
-      FieldDef("purchase", StringType,  1,    WeightedSelect(purchase)),
-      FieldDef("section",  StringType,  1,    DistributedDouble(10000, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
-      FieldDef("active",   BooleanType, 1,    Constant("true")),
-      FieldDef("kv",       StringType,  3,    DistributedDouble(10, "org.apache.commons.math3.distribution.NormalDistribution", Seq(0D, 0.2))),
-      FieldDef("price",    IntType,     1,    RandomDouble(2))
-    )
+    IndexedSeq(
+      FieldDef("time", format, 1,
+        () => Linear,
+        () => TimeMapper("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.MILLIS, LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0))
+      ),
+      FieldDef("gwid", format, 1,
+        () => Random(50),
+        () => new UuidMapper[Int]
+      ),
+      FieldDef("country", format, 1,
+        () => WeightedEnumeration[String](countries),
+        () => new IdentityMapper[String]
+      ),
+      FieldDef("purchase", format, 1,
+        () => WeightedEnumeration[String](purchase),
+        () => new IdentityMapper[String]
+      ),
+      FieldDef("section", format, 1,
+        () => DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
+        () => new IdentityMapper[Double]
+      ),
+      FieldDef("kv", format, 10,
+        () => DistributedDouble(10, new NormalDistribution(0D, 0.2)),
+        () => new IdentityMapper[Double]
+      ),
+      FieldDef("price", format, 1,
+        () => DistributedDouble(100, new UniformRealDistribution(1, 1000)),
+        () => new RoundingMapper(2)
+      )
+    ).flatten.toList
   }
 }

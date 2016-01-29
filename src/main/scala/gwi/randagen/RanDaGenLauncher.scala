@@ -20,13 +20,6 @@ object RanDaGenLauncher extends App {
     s3Client
   }
 
-  private def producerOf(dataType: String, dataSetDef: DataSetDef) = dataType match {
-    case "json" =>
-      EventProducer.ofJson(dataSetDef)
-    case extension =>
-      EventProducer.ofDsv(extension, dataSetDef)
-  }
-
   private def consumersFor(storagePaths: List[(String, String)]) = storagePaths.map {
     case ("fs", path) =>
       FsEventConsumer(Paths.get(path))
@@ -37,47 +30,55 @@ object RanDaGenLauncher extends App {
       throw new IllegalArgumentException(s"Storage $storage and path $path are not valid !")
   }
 
-  def run(dataType: String, batchSize: Int, eventCount: Int, storage: String, path: String, dataSetDef: DataSetDef): Future[List[BatchRes]] =
+  def run(format: String, batchSize: Int, eventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] =
     generate(
       batchSize,
       eventCount,
-      producerOf(dataType, dataSetDef),
-      consumersFor(storage.split(",").zip(path.split(",")).toList)
+      producer,
+      consumers
     )
 
-  args.toList match {
-    case dataType :: dataSetName :: batchSize :: eventCount :: storage :: path :: jsonDef :: Nil =>
-      val start = System.currentTimeMillis()
-      val dataSetDef = DataSetDef.deserialize(Paths.get(jsonDef))
-      val f = run(dataType, batchSize.toInt, eventCount.toInt, storage, path, dataSetDef).map { batchResponses =>
-        val responsesByConsumer = batchResponses.groupBy(_.id)
-        s"""
-          |total time :
-          |${(System.currentTimeMillis() - start) / 1000D} s
-          |
+  private def runMain(format: String, batchSize: Int, eventCount: Int, storage: String, path: String, dataSetName: String) = {
+    val start = System.currentTimeMillis()
+    run(
+      format,
+      batchSize,
+      eventCount,
+      EventProducer.get(dataSetName, format),
+      consumersFor(storage.split(",").zip(path.split(",")).toList)
+    ).map { batchResponses =>
+      val responsesByConsumer = batchResponses.groupBy(_.id)
+      s"""
+         |total time :
+         |${(System.currentTimeMillis() - start) / 1000D} s
+         |
           |persistence took :
-          |${responsesByConsumer.mapValues(_.map(_.took).sum / 1000D).mkString("\n")} s
-          |
+         |${responsesByConsumer.mapValues(_.map(_.took).sum / 1000D).mkString("\n")} s
+         |
           |data stored :
-          |${responsesByConsumer.mapValues(_.map(_.name).mkString(" ")).mkString("\n")}
-          |
-          |data size in MB :
-          |${responsesByConsumer.mapValues(_.map(_.byteSize.toLong).sum).mapValues(size => BigDecimal(size / (1000*1000D)).setScale(2, HALF_UP).toString).mkString("\n")}
+         |${responsesByConsumer.mapValues(_.map(_.name).mkString(" ")).mkString("\n")}
+         |
+          |data size :
+         |${responsesByConsumer.mapValues(_.map(_.byteSize.toLong).sum).mapValues(size => BigDecimal(size / (1000 * 1000D)).setScale(2, HALF_UP).toString).mkString("\n")} MB
         """.stripMargin
-      }
-      println(Await.result(f, 1.hour))
+    }
+  }
+
+  args.toList match {
+    case format :: dataSetName :: batchSize :: eventCount :: storage :: path :: Nil =>
+      val results = runMain(format, batchSize.toInt, eventCount.toInt, storage, path, dataSetName)
+      println(Await.result(results, 1.hour))
     case _ =>
       println(
         s"""
           | Wrong arguments, examples :
-          |   dataType   dataSet   batchSize   eventCount   storage       path          jsonDataSetDefinition
-          |   -----------------------------------------------------------------------------------------------
-          |   tsv         gwiq      200000      10000000    s3       bucket@foo/bar       /tmp/def.json
-          |   csv         gwiq      200000      10000000    fs       /tmp                 /tmp/def.json
-          |   json        gwiq      200000      10000000    fs,s3    /tmp,bucket@foo/bar  /tmp/def.json
+          |   format   dataSet   batchSize   eventCount   storage       path
+          |   --------------------------------------------------------------------------
+          |   tsv       gwiq     50000000     10000000    s3       bucket@foo/bar
+          |   csv       gwiq     50000000     10000000    fs       /tmp
+          |   json      gwiq     50000000     10000000    fs,s3    /tmp,bucket@foo/bar
           |
           | Example data-set definition :
-          | ${DataSetDef.serialize(DataSetDef.sampleDataSetDef, 4)}
         """.stripMargin)
   }
 
