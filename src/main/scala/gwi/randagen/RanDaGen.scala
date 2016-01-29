@@ -12,22 +12,13 @@ import scala.concurrent.{Await, Future}
   */
 object RanDaGen {
 
-  /**
-    * @note that this method exists merely because it is the only way to be sure that SDK doesn't perform Boxing of primitives
-    */
-  def flattenArray(xs: Iterable[Array[Byte]]): Array[Byte] =
-    xs.foldLeft((0, new Array[Byte](xs.iterator.map(_.length).sum))) { case ((arrIdx, targetArr), event) =>
-      val size = event.length
-      System.arraycopy(event, 0, targetArr, arrIdx, size)
-      size+arrIdx -> targetArr
-    }._2
-
-  def generate(batchSize: Int, eventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] = {
+  def generate(batchSize: Int, maxBatchByteSize: Int, eventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] = {
     IntShuffler.shuffledIterator(0, eventCount)
       .zipWithIndex
-      .foldLeft(Future.successful(List.empty[BatchRes]), new ArrayBuffer[Array[Byte]](batchSize)) { case ((flushingFuture, acc), (shuffledIdx, idx)) =>
+      .foldLeft(Future.successful(List.empty[BatchRes]), 0, new ArrayBuffer[Array[Byte]](batchSize)) { case ((flushingFuture, byteSize, acc), (shuffledIdx, idx)) =>
         def pullEvent = producer.produce(Progress(shuffledIdx, idx, eventCount))
-        def pushEvents = Future.fold(List(flushingFuture, Future.sequence(consumers.map(_.consume(BatchReq(s"$idx.${producer.extension}", flattenArray(acc)))))))(List.empty[BatchRes]) {
+        def pushEvents(loadSize: Int, load: Iterable[Array[Byte]]) =
+          Future.fold(List(flushingFuture, Future.sequence(consumers.map(_.consume(BatchReq(s"$idx.${producer.extension}", loadSize, load))))))(List.empty[BatchRes]) {
             case (oldRes, newRes) => newRes ++ oldRes
           }
         def tryBackPressure =
@@ -36,14 +27,17 @@ object RanDaGen {
             Await.ready(flushingFuture, 1.minute)
           }
 
-        if (eventCount-1 == idx) {
-          acc.append(pullEvent.getBytes)
-          pushEvents -> ArrayBuffer.empty
-        } else if (acc.length == batchSize) {
+        if (eventCount-1 == idx) { // last event
+          val bytes = pullEvent.getBytes
+          acc.append(bytes)
+          (pushEvents(byteSize+bytes.length, acc), 0, ArrayBuffer.empty)
+        } else if (byteSize > maxBatchByteSize || acc.length == batchSize) { // batch is ready
           tryBackPressure
-          pushEvents -> new ArrayBuffer(batchSize).+=(pullEvent.getBytes)
+          val bytes = pullEvent.getBytes
+          (pushEvents(byteSize, acc), bytes.length, new ArrayBuffer(batchSize).+=(bytes))
         } else {
-          flushingFuture -> acc.+=(pullEvent.getBytes)
+          val bytes = pullEvent.getBytes
+          (flushingFuture, byteSize+bytes.length, acc.+=(bytes))
         }
       }._1
   }

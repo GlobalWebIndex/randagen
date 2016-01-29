@@ -30,20 +30,22 @@ object RanDaGenLauncher extends App {
       throw new IllegalArgumentException(s"Storage $storage and path $path are not valid !")
   }
 
-  def run(format: String, batchSize: Int, eventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] =
+  def run(format: String, batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, producer: EventProducer, consumers: List[EventConsumer]): Future[List[BatchRes]] =
     generate(
       batchSize,
-      eventCount,
+      maxBatchSize_MB * 1000000,
+      totalEventCount,
       producer,
       consumers
     )
 
-  private def runMain(format: String, batchSize: Int, eventCount: Int, storage: String, path: String, dataSetName: String) = {
+  private def runMain(format: String, batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, storage: String, path: String, dataSetName: String) = {
     val start = System.currentTimeMillis()
     run(
       format,
       batchSize,
-      eventCount,
+      maxBatchSize_MB,
+      totalEventCount,
       EventProducer.get(dataSetName, format),
       consumersFor(storage.split(",").zip(path.split(",")).toList)
     ).map { batchResponses =>
@@ -65,18 +67,18 @@ object RanDaGenLauncher extends App {
   }
 
   args.toList match {
-    case format :: dataSetName :: batchSize :: eventCount :: storage :: path :: Nil =>
-      val results = runMain(format, batchSize.toInt, eventCount.toInt, storage, path, dataSetName)
+    case format :: dataSetName :: batchSize :: maxBatchSize_MB :: totalEventCount :: storage :: path :: Nil =>
+      val results = runMain(format, batchSize.toInt, maxBatchSize_MB.toInt, totalEventCount.toInt, storage, path, dataSetName)
       println(Await.result(results, 1.hour))
     case _ =>
       println(
         s"""
           | Wrong arguments, examples :
-          |   format   dataSet   batchSize   eventCount   storage       path
-          |   --------------------------------------------------------------------------
-          |   tsv       gwiq     50000000     10000000    s3       bucket@foo/bar
-          |   csv       gwiq     50000000     10000000    fs       /tmp
-          |   json      gwiq     50000000     10000000    fs,s3    /tmp,bucket@foo/bar
+          |   format   dataSet   batchSize   maxBatchSize-MB    totalEventCount   storage       path
+          |   ------------------------------------------------------------------------------------------------
+          |   tsv       gwiq      2000000         50                10000000        s3         bucket@foo/bar
+          |   csv       gwiq      2000000         50                10000000        fs         /tmp
+          |   json      gwiq      2000000         50                10000000        fs,s3      /tmp,bucket@foo/bar
           |
           | Example data-set definition :
         """.stripMargin)

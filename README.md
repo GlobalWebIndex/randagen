@@ -31,11 +31,11 @@ docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e
 
 Just use real arguments instead of `ARGS` ^, examples :
 ```
-format     dataSet   batchSize   eventCount   storage     path          
---------------------------------------------------------------------------
-tsv         gwiq      50000000    10000000    s3       bucket@foo/bar     
-csv         gwiq      50000000    10000000    fs       /tmp               
-json        gwiq      50000000    10000000    fs,s3    /tmp,bucket@foo/bar
+format   dataSet   batchSize   maxBatchSize-MB    totalEventCount   storage       path
+------------------------------------------------------------------------------------------------
+tsv       gwiq      2000000         50                10000000        s3         bucket@foo/bar
+csv       gwiq      2000000         50                10000000        fs         /tmp
+json      gwiq      2000000         50                10000000        fs,s3      /tmp,bucket@foo/bar
 ```
 
 Or use it as a dependency : 

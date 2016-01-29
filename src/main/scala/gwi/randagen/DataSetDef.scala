@@ -21,7 +21,7 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
   */
 object FieldDef {
   def apply[I,O](name: String, format: String, count: Int, dist: () => Distribution[I], mapper: () => Mapper[I,O]): IndexedSeq[FieldDef] = {
-    def json(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String = {
+    def toJson(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String = {
       val value = mapper.apply(dist.sample(progress))
       def formatValue =
         if (value.isInstanceOf[String])
@@ -31,7 +31,7 @@ object FieldDef {
       s"""\"$name\": $formatValue"""
     }
 
-    def dsv(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String =
+    def toDsv(name: String, dist: Distribution[I], mapper: Mapper[I,O])(progress: Progress): String =
       mapper.apply(dist.sample(progress)).toString
 
     def formatBy(fn: (String, Distribution[I], Mapper[I, O]) => FieldDef) = {
@@ -42,8 +42,8 @@ object FieldDef {
     }
 
     format match {
-      case "json" => formatBy(json)
-      case "dsv" => formatBy(dsv)
+      case "json" => formatBy(toJson)
+      case dsv if dsv == "csv" || dsv == "tsv" => formatBy(toDsv)
       case x => throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
     }
   }
@@ -68,7 +68,7 @@ case class CsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
 }
 case class TsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
   val delimiter = "\t"
-  val extension = "csv"
+  val extension = "tsv"
 }
 
 object EventProducer {
@@ -105,15 +105,15 @@ object EventProducer {
         () => WeightedEnumeration[String](countries),
         () => new IdentityMapper[String]
       ),
-      FieldDef("purchase", format, 1,
-        () => WeightedEnumeration[String](purchase),
-        () => new IdentityMapper[String]
-      ),
       FieldDef("section", format, 1,
         () => DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
-      FieldDef("kv", format, 10,
+      FieldDef("purchase", format, 1,
+        () => WeightedEnumeration[String](purchase),
+        () => new IdentityMapper[String]
+      ),
+      FieldDef("kv", format, 3,
         () => DistributedDouble(10, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
