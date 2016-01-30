@@ -110,7 +110,7 @@ object Build extends sbt.Build {
       ),
       autoCompilerPlugins := true,
       cancelable in Global := true,
-      libraryDependencies ++= awsDeps ++ testingDeps ++ Seq(
+      libraryDependencies ++= awsDeps ++ loggingDeps ++ testingDeps ++ Seq(
         "org.apache.commons" % "commons-math3" % "3.6"
       )
     ).settings(testSettings ++ publishSettings)

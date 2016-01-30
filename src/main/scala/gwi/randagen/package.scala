@@ -15,4 +15,11 @@ package object randagen {
     * and generate some meaningful value as output (uuid, timeStamp, rounded double for pricing, etc.)
     */
   type Mapper[I,O] = (I => O)
+
+  /**
+    * Event generator is a user supplied definition of how DataSet is generated
+    * It is a function because it created #parallelism times
+    * Commons Math is not thread safe hence each thread keeps its own generator instance
+    */
+  type EventGeneratorFactory = Parallelism => EventGenerator
 }

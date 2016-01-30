@@ -49,40 +49,42 @@ object FieldDef {
   }
 }
 
-trait EventProducer {
+trait EventGenerator {
   def extension: String
-  def produce(progress: Progress): String
+  def generate(progress: Progress): String
   def fieldDefs: EventDef
 }
-trait DsvEventProducer extends EventProducer {
+trait DsvEventGenerator extends EventGenerator {
   def delimiter: String
-  def produce(progress: Progress): String = fieldDefs.map(_(progress)).mkString("", delimiter, "\n")
+  def generate(progress: Progress): String = fieldDefs.map(_(progress)).mkString("", delimiter, "\n")
 }
-case class JsonEventProducer(val fieldDefs: EventDef) extends EventProducer {
+case class JsonEventGenerator(val fieldDefs: EventDef) extends EventGenerator {
   def extension: String = "json"
-  def produce(progress: Progress): String = fieldDefs.map(_(progress)).mkString("{", ", ", "}")
+  def generate(progress: Progress): String = fieldDefs.map(_(progress)).mkString("{", ", ", "}")
 }
-case class CsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
+case class CsvEventGenerator(val fieldDefs: EventDef) extends DsvEventGenerator {
   val delimiter = ","
   val extension = "csv"
 }
-case class TsvEventProducer(val fieldDefs: EventDef) extends DsvEventProducer {
+case class TsvEventGenerator(val fieldDefs: EventDef) extends DsvEventGenerator {
   val delimiter = "\t"
   val extension = "tsv"
 }
 
-object EventProducer {
+object EventGenerator {
 
-  def get(name: String, format: String): EventProducer = Map(
-    "sample" -> sample(format)
-  ).get(name)
-    .map[EventProducer] {
-      case fieldDef if format == "json" => JsonEventProducer(fieldDef)
-      case fieldDef if format == "csv"  => CsvEventProducer(fieldDef)
-      case fieldDef if format == "tsv"  => TsvEventProducer(fieldDef)
+  def factory(name: String, format: String): EventGeneratorFactory = { p: Parallelism =>
+    Map(
+      "sample" -> sample(format, p)
+    ).get(name)
+      .map[EventGenerator] {
+      case fieldDef if format == "json" => JsonEventGenerator(fieldDef)
+      case fieldDef if format == "csv" => CsvEventGenerator(fieldDef)
+      case fieldDef if format == "tsv" => TsvEventGenerator(fieldDef)
     }.getOrElse(throw new IllegalArgumentException(s"DataSet definition $name does not exist !!!"))
+  }
 
-  private def sample(format: String): EventDef = {
+  private def sample(format: String, p: Parallelism): EventDef = {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
     def countries = {
       val list = List(
@@ -106,19 +108,19 @@ object EventProducer {
         () => new IdentityMapper[String]
       ),
       FieldDef("section", format, 1,
-        () => DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
+        () => DistributedDouble(10000, new NormalDistribution(0D, 0.2))(p),
         () => new IdentityMapper[Double]
       ),
       FieldDef("purchase", format, 1,
         () => WeightedEnumeration[String](purchase),
         () => new IdentityMapper[String]
       ),
-      FieldDef("kv", format, 3,
-        () => DistributedDouble(10, new NormalDistribution(0D, 0.2)),
+      FieldDef("kv", format, 1000,
+        () => DistributedDouble(12, new NormalDistribution(0D, 0.2))(p),
         () => new IdentityMapper[Double]
       ),
       FieldDef("price", format, 1,
-        () => DistributedDouble(100, new UniformRealDistribution(1, 1000)),
+        () => DistributedDouble(100, new UniformRealDistribution(1, 1000))(p),
         () => new RoundingMapper(2)
       )
     ).flatten.toList

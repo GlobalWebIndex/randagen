@@ -1,0 +1,11 @@
+<configuration>
+    <timestamp key="bySecond" datePattern="yyyy-MM-dd_HHmmss"/>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} [%.12thread] %-5level %logger{0} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

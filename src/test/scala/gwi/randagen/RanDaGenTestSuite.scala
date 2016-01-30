@@ -13,7 +13,7 @@ class RanDaGenTestSuite extends FreeSpec with Matchers {
       )
 
     val expected = Array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i').map(_.toByte)
-    val actual = Utils.flattenArray(target)
+    val actual = ArrayUtils.flattenArray(target)
     assertResult(expected)(actual)
   }
 
