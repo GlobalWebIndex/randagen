@@ -46,8 +46,8 @@ object RanDaGen extends App with LazyLogging {
        |persistence by consumer took :
        |${report.consumerResponses.map(_.took).sum / 1000D} s
        |
-       |data stored to :
-       |${report.consumerResponses.map(_.name).mkString(" ")}
+       |number of batches/files :
+       |${report.consumerResponses.size}
        |
        |data size :
        |${BigDecimal(report.consumerResponses.map(_.byteSize.toLong).sum / (1000 * 1000D)).setScale(2, HALF_UP).toString} MB
