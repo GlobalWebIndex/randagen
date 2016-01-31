@@ -114,6 +114,6 @@ object Build extends sbt.Build {
         "org.apache.commons" % "commons-math3" % "3.6"
       )
     ).settings(testSettings ++ publishSettings)
-    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.RanDaGenLauncher")):_*)
+    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.RanDaGen")):_*)
 
 }
