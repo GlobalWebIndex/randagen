@@ -92,10 +92,12 @@ object RanDaGen extends App with LazyLogging {
   args.toList match {
     case format :: dataSetName :: batchSize :: maxBatchSize_MB :: totalEventCount :: parallelism :: storage :: path :: Nil =>
       runMain(format, batchSize.toInt, maxBatchSize_MB.toInt, totalEventCount.toInt, parallelism.toInt, storage, path, dataSetName)
-    case _ =>
+    case x =>
       println(
         s"""
-          | Wrong arguments, examples :
+          | Wrong arguments : ${x.mkString(" ")}
+          | Please see :
+          |
           |   format   dataSet   batchSize   maxBatchSize-MB    totalEventCount  parallelism  storage        path
           |   ------------------------------------------------------------------------------------------------------------
           |   tsv       sample    2000000         50                10000000         4          s3         bucket@foo/bar
