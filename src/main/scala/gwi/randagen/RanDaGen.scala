@@ -64,7 +64,7 @@ object RanDaGen extends App with LazyLogging {
         totalEventCount,
         Parallelism(parallelism),
         consumerFor(storage, path)
-      )(EventGenerator.factory(dataSetName, format)).map(print(start, _))
+      )(EventGenerator.factory(format, dataSetName)).map(print(start, _))
     Await.ready(f, 1.hour)
   }
 

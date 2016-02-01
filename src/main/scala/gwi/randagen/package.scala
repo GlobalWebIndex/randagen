@@ -7,7 +7,7 @@ package object randagen {
    * It is basically a specification of how events should be generated
    */
 
-  type FieldDef = Progress => String
+  type FieldDef = (String, Progress) => String
   type EventDef = List[FieldDef]
 
   /**
