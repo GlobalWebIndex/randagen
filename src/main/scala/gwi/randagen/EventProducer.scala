@@ -35,7 +35,7 @@ class EventProducer(createGenerator: EventGeneratorFactory, consumer: EventConsu
               def pullEvent = producer.generate(Progress(shuffledIdx, idx, eventCount))
               def pushEvents(loadSize: Int, load: Iterable[Array[Byte]]) = consumer.push(ConsumerRequest(s"$idx.${producer.extension}", loadSize, load))
 
-              if (eventCount - 1 == idx) {
+              if (!it.hasNext) {
                 // last event
                 val bytes = pullEvent.getBytes
                 acc.append(bytes)
