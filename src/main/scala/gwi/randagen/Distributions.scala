@@ -34,14 +34,14 @@ case class WeightedEnumeration[T](values: Array[(T, Double)]) extends Distributi
   def sample(progress: Progress): T = distribution.sample
 }
 
-case class DistributedInteger(dataPointsCount: Int, dist: IntegerDistribution)(p: Parallelism) extends Distribution[Int] {
+case class DistributedInteger(dataPointsCount: Int, dist: IntegerDistribution)(implicit p: Parallelism) extends Distribution[Int] {
   require(dataPointsCount % p.n == 0, s"Please select dataPointsCount so it is divisible by parallelism ${p.n}, $dataPointsCount is not.")
   def pmf = new IntDistro(dist).getPMF(dataPointsCount / p.n)
   val distribution = Commons.enumeratedDistro(pmf)
   def sample(progress: Progress): Int = distribution.sample
 }
 
-case class DistributedDouble(dataPointsCount: Int, dist: RealDistribution)(p: Parallelism) extends Distribution[Double] {
+case class DistributedDouble(dataPointsCount: Int, dist: RealDistribution)(implicit p: Parallelism) extends Distribution[Double] {
   require(dataPointsCount % p.n == 0, s"Please select dataPointsCount so it is divisible by parallelism ${p.n}, $dataPointsCount is not.")
   def pmf = new RealDistro(dist).getPMF(dataPointsCount / p.n)
   val distribution = Commons.enumeratedDistro(pmf)

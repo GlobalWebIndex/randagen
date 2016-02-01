@@ -17,7 +17,8 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
   * FieldDef is a definition of a single field/column
   *
   * @note that it has `count` property which specifies into how many fields should this definition be expanded to
-  * All fields will be identical with name suffixed with number, a value will be generated for each field extra
+  * All fields will be identical with name suffixed with number
+  * Each field will have it's own distribution - that's why Distribution and Mapper are passed as functions
   */
 object FieldDef {
   def apply[I,O](name: String, count: Int, dist: () => Distribution[I], mapper: () => Mapper[I,O]): IndexedSeq[FieldDef] = {
@@ -81,7 +82,7 @@ object EventGenerator {
     case "tsv" => TsvEventGenerator(eventDef)
   }
 
-  private def sampleEventDef(p: Parallelism): EventDef = {
+  private def sampleEventDef(implicit p: Parallelism): EventDef = {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
     def countries = {
       val list = List(
@@ -105,7 +106,7 @@ object EventGenerator {
         () => new IdentityMapper[String]
       ),
       FieldDef("section", 1,
-        () => DistributedDouble(10000, new NormalDistribution(0D, 0.2))(p),
+        () => DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
       FieldDef("purchase", 1,
@@ -113,11 +114,11 @@ object EventGenerator {
         () => new IdentityMapper[String]
       ),
       FieldDef("kv", 1000,
-        () => DistributedDouble(12, new NormalDistribution(0D, 0.2))(p),
+        () => DistributedDouble(12, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
       FieldDef("price", 1,
-        () => DistributedDouble(100, new UniformRealDistribution(1, 1000))(p),
+        () => DistributedDouble(100, new UniformRealDistribution(1, 1000)),
         () => new RoundingMapper(2)
       )
     ).flatten.toList

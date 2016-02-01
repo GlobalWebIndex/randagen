@@ -101,7 +101,7 @@ object Build extends sbt.Build {
       organization := "net.globalwebindex",
       name := "randagen",
       scalaVersion := "2.11.7",
-      version := "0.1-SNAPSHOT",
+      version := "0.2-SNAPSHOT",
       scalacOptions ++= Seq(
         "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
         "-Xlint", "-Xfuture",
