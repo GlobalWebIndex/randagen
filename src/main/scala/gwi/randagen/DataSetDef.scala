@@ -89,7 +89,7 @@ object EventGenerator {
         "bra","nzl","bel","bgr","idn","egy","tur","nor","pol","jpn","esp","irl","cze","dnk","che","nld",
         "ita","rus","pri","deu","eur","pry","usa","dom","gtm","ury","col","fra","isr","arg","mex","gbr"
       )
-      list.zip(list.foldLeft(List(0.1)) { case (acc, _) => (acc.head * 2) :: acc }).toArray
+      list.zip(list.foldLeft(List(0.2)) { case (acc, _) => (acc.head * 1.1) :: acc }).toArray
     }
 
     IndexedSeq(
