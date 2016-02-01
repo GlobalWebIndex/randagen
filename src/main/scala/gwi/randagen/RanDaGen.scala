@@ -8,7 +8,8 @@ import com.amazonaws.services.s3.AmazonS3Client
 import com.typesafe.scalalogging.LazyLogging
 import BigDecimal.RoundingMode.HALF_UP
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 case class Report(producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse])
@@ -56,13 +57,15 @@ object RanDaGen extends App with LazyLogging {
 
   private def runMain(format: String, batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, parallelism: Int, storage: String, path: String, dataSetName: String) = {
     val start = System.currentTimeMillis()
-    run(
-      batchSize,
-      maxBatchSize_MB,
-      totalEventCount,
-      Parallelism(parallelism),
-      consumerFor(storage, path)
-    )(EventGenerator.factory(dataSetName, format)).map(print(start, _))
+    val f =
+      run(
+        batchSize,
+        maxBatchSize_MB,
+        totalEventCount,
+        Parallelism(parallelism),
+        consumerFor(storage, path)
+      )(EventGenerator.factory(dataSetName, format)).map(print(start, _))
+    Await.ready(f, 1.hour)
   }
 
   def run(batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, p: Parallelism, consumer: EventConsumer)(factory: EventGeneratorFactory): Future[Report] = {
