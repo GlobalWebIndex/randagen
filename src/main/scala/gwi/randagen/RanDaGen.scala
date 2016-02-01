@@ -12,7 +12,16 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-case class Report(producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse])
+case class Report(producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
+  override def toString =
+    s"""
+       |event generator creation took : ${producerResponses.map(_.generatorsTook.toMillis).zipWithIndex.map(t => s"${t._2} thread : ${t._1} ms").mkString("\n","\n","")}
+       |data generation took : ${producerResponses.map(_.producersTook.toMillis).zipWithIndex.map(t => s"${t._2} thread : ${t._1/1000} s").mkString("\n","\n","")}
+       |persistence by consumer took : ${consumerResponses.map(_.took).sum / 1000D} s
+       |number of batches/files : ${consumerResponses.size}
+       |data size : ${BigDecimal(consumerResponses.map(_.byteSize.toLong).sum / (1000 * 1000D)).setScale(2, HALF_UP).toString} MB
+    """.stripMargin
+}
 
 object RanDaGen extends App with LazyLogging {
 
@@ -33,30 +42,7 @@ object RanDaGen extends App with LazyLogging {
       throw new IllegalArgumentException(s"Storage $storage and path $path are not valid !")
   }
 
-  private def print(start: Long, report: Report) = println {
-    s"""
-       |total time :
-       |${(System.currentTimeMillis() - start) / 1000D} s
-       |
-       |event generator creation took :
-       |${report.producerResponses.map(_.generatorsTook.toMillis).zipWithIndex.map(t => s"${t._2} thread : ${t._1} ms").mkString("\n")}
-       |
-       |data generation took :
-       |${report.producerResponses.map(_.producersTook.toMillis).zipWithIndex.map(t => s"${t._2} thread : ${t._1/1000} s").mkString("\n")}
-       |
-       |persistence by consumer took :
-       |${report.consumerResponses.map(_.took).sum / 1000D} s
-       |
-       |number of batches/files :
-       |${report.consumerResponses.size}
-       |
-       |data size :
-       |${BigDecimal(report.consumerResponses.map(_.byteSize.toLong).sum / (1000 * 1000D)).setScale(2, HALF_UP).toString} MB
-          """.stripMargin
-  }
-
   private def runMain(format: String, batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, parallelism: Int, storage: String, path: String, dataSetName: String) = {
-    val start = System.currentTimeMillis()
     val f =
       run(
         batchSize,
@@ -64,7 +50,7 @@ object RanDaGen extends App with LazyLogging {
         totalEventCount,
         Parallelism(parallelism),
         consumerFor(storage, path)
-      )(EventGenerator.factory(format, dataSetName)).map(print(start, _))
+      )(EventGenerator.factory(format, dataSetName)).map(println)
     Await.ready(f, 1.hour)
   }
 
