@@ -1,6 +1,7 @@
 package gwi.randagen
 
 import java.nio.file.Paths
+import java.text.DecimalFormat
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.regions.{Region, Regions}
@@ -16,15 +17,16 @@ case class Report(producerResponses: List[ProducerResponse], consumerResponses: 
   def scale(value: Double) = BigDecimal(value).setScale(2, HALF_UP)
   def zipByThread(xs: Iterable[Long]) = xs.zipWithIndex.map(t => s"${t._2} thread : ${t._1} ms").mkString("\n", "\n", "")
   override def toString = {
+    val formatter = new DecimalFormat("#,###")
     lazy val generators = zipByThread(producerResponses.map(_.generatorsTook.toMillis))
     lazy val production = zipByThread(producerResponses.map(_.producersTook.toMillis))
-    lazy val persistence = consumerResponses.map(_.took).sum / 1000D
+    lazy val persistence = consumerResponses.map(_.took).sum
     lazy val dataSize = scale(consumerResponses.map(_.byteSize.toLong).sum / (1000 * 1000D)).toDouble
     lazy val throughPut = scale(dataSize / producerResponses.map(_.producersTook.toMillis).sorted.last * 1000D)
     s"""
-       |event generator creation took : $generators
-       |data production took : $production
-       |persistence by consumer took : $persistence s
+       |event generator creation took : ${formatter.format(generators)} ms
+       |data production took : ${formatter.format(production)} ms
+       |persistence by consumer took : ${formatter.format(persistence)} ms
        |number of batches/files : ${consumerResponses.size}
        |data size : $dataSize MB
        |throughput : $throughPut MB/s
