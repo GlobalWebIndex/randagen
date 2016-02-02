@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-case class Report(producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
+case class Report(eventCount: Int, producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
   def scale(value: Double) = BigDecimal(value).setScale(2, HALF_UP)
   def zipByThread(xs: Iterable[Long]) = xs.zipWithIndex.map(t => s"${t._2} thread : ${t._1} ms").mkString("\n", "\n", "")
   override def toString = {
@@ -86,7 +86,7 @@ object RanDaGen extends App with LazyLogging {
     val consumerThread = startConsumer
     val producerFuture = startProducer
     consumerThread.join()
-    producerFuture.map(Report(_, consumer.getResponses))
+    producerFuture.map(Report(totalEventCount, _, consumer.getResponses))
   }
 
   args.toList match {
