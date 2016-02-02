@@ -1,6 +1,5 @@
 package gwi.randagen
 
-import com.typesafe.scalalogging.LazyLogging
 import gwi.randagen.ArrayUtils.ArrayPimp
 
 import scala.collection.mutable.ArrayBuffer
@@ -21,7 +20,7 @@ case class ProducerResponse(generatorsTook: FiniteDuration, producersTook: Finit
   * It can persist half a billion events with 30GB of data in 10 minutes using just 6GB of Heap.
   * It is able to generate randomly distributed data with predefined cardinality which is the main speed and data volume bottleneck
   */
-class EventProducer(createGenerator: EventGeneratorFactory, consumer: EventConsumer)(p: Parallelism) extends LazyLogging with Profiling {
+class EventProducer(createGenerator: EventGeneratorFactory, consumer: EventConsumer)(p: Parallelism) extends Profiling {
 
   def generate(batchSize: Int, maxBatchByteSize: Int, eventCount: Int): Future[List[ProducerResponse]] = {
     ArrayUtils

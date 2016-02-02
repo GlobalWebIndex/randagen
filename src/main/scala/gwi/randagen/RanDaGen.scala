@@ -5,13 +5,14 @@ import java.nio.file.Paths
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
-import com.typesafe.scalalogging.LazyLogging
+import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-object RanDaGen extends App with LazyLogging {
+object RanDaGen extends App {
+  private val logger = LoggerFactory.getLogger(getClass.getName)
 
   private def s3Client = {
     def getEnv(key: String) = sys.env.getOrElse(key, throw new IllegalStateException(s"Please export $key as an environment variable !!!"))

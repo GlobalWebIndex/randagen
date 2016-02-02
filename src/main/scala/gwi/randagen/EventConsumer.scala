@@ -7,7 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue
 
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ObjectMetadata
-import com.typesafe.scalalogging.LazyLogging
+import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
@@ -20,7 +20,8 @@ case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
   * A bounded BlockingQueue based implementation of a Consumer being able to consume messages by
   * concurrently running publishers. It blocks publisher if it is falling behind (queue gets full)
   */
-sealed trait EventConsumer extends Runnable with LazyLogging {
+sealed trait EventConsumer extends Runnable {
+  private val logger = LoggerFactory.getLogger(getClass)
   private val responses = List.newBuilder[ConsumerResponse]
   private val queue = new LinkedBlockingQueue[Request](4)
   protected def consume(req: ConsumerRequest): ConsumerResponse
