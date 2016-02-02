@@ -44,5 +44,5 @@ json      sample    2000000         50                10000000         4        
 Or use it as a dependency : 
 
 ```
-"net.globalwebindex" %% "randagen" % "0.1-SNAPSHOT"
+"net.globalwebindex" %% "randagen" % "0.2-SNAPSHOT"
 ```
