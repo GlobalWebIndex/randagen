@@ -1,38 +1,15 @@
 package gwi.randagen
 
 import java.nio.file.Paths
-import java.text.DecimalFormat
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.typesafe.scalalogging.LazyLogging
-import BigDecimal.RoundingMode.HALF_UP
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
-
-case class Report(eventCount: Int, producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
-  def scale(value: Double) = BigDecimal(value).setScale(2, HALF_UP)
-  def zipByThread(xs: Iterable[Long]) = xs.zipWithIndex.map(t => s"${t._2} thread : ${t._1} ms").mkString("\n", "\n", "")
-  override def toString = {
-    val formatter = new DecimalFormat("#,###")
-    lazy val generators = zipByThread(producerResponses.map(_.generatorsTook.toMillis))
-    lazy val production = zipByThread(producerResponses.map(_.producersTook.toMillis))
-    lazy val persistence = consumerResponses.map(_.took).sum
-    lazy val dataSize = scale(consumerResponses.map(_.byteSize.toLong).sum / (1000 * 1000D)).toDouble
-    lazy val throughPut = scale(dataSize / producerResponses.map(_.producersTook.toMillis).sorted.last * 1000D)
-    s"""
-       |event generator creation took : ${formatter.format(generators)} ms
-       |data production took : ${formatter.format(production)} ms
-       |persistence by consumer took : ${formatter.format(persistence)} ms
-       |number of batches/files : ${consumerResponses.size}
-       |data size : $dataSize MB
-       |throughput : $throughPut MB/s
-    """.stripMargin
-  }
-}
 
 object RanDaGen extends App with LazyLogging {
 
@@ -61,8 +38,8 @@ object RanDaGen extends App with LazyLogging {
         totalEventCount,
         Parallelism(parallelism),
         consumerFor(storage, path)
-      )(EventGenerator.factory(format, dataSetName)).map(println)
-    Await.ready(f, 1.hour)
+      )(EventGenerator.factory(format, dataSetName))
+    println(Await.result(f, 4.hours))
   }
 
   def run(batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, p: Parallelism, consumer: EventConsumer)(factory: EventGeneratorFactory): Future[Report] = {
