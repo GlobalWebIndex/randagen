@@ -13,7 +13,7 @@ import scala.util.Try
 
 sealed trait Request
 object PoisonPill extends Request
-case class ConsumerRequest(name: String, totalSize: Int, batchLoad: Iterable[Array[Byte]]) extends Request
+case class ConsumerRequest(name: String, totalSize: Int, batchLoad: Array[Array[Byte]]) extends Request
 case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
 
 /**

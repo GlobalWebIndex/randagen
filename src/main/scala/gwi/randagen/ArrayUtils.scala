@@ -37,7 +37,7 @@ object ArrayUtils {
     * @param byteSize optional total size of the future array - for performance reasons, summing up 100 000 integers can be expensive
     * @note that this method exists merely because it is the only way to be sure that SDK doesn't perform Boxing of primitives
     */
-  def flattenArray(xs: Iterable[Array[Byte]], byteSize: Option[Int] = Option.empty): Array[Byte] =
+  def flattenArray(xs: Array[Array[Byte]], byteSize: Option[Int] = Option.empty): Array[Byte] =
     xs.foldLeft((0, new Array[Byte](byteSize.getOrElse(xs.iterator.map(_.length).sum)))) { case ((arrIdx, targetArr), event) =>
       val size = event.length
       System.arraycopy(event, 0, targetArr, arrIdx, size)

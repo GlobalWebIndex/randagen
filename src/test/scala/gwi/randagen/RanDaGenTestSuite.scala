@@ -6,7 +6,7 @@ class RanDaGenTestSuite extends FreeSpec with Matchers {
 
   "flattening array should work" in {
     val target =
-      List(
+      Array(
         Array('a', 'b', 'c').map(_.toByte),
         Array('d', 'e', 'f').map(_.toByte),
         Array('g', 'h', 'i').map(_.toByte)
