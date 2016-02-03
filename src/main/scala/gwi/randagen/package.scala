@@ -9,7 +9,8 @@ package object randagen {
   type EventDef = List[FieldDef]
 
   /**
-    * Field definition is lazy because :
+    * Definition of the field value generation process, Progress is needed for value generation, Format for serialization
+    * It is lazy because :
     *   1) each event can have varying count of fields (eg. FieldDef representing key-value query parameters can yield 1 - 1000 fields)
     *   2) it is constructed for each thread because Commons Math distributions are not thread-safe
     */
@@ -22,9 +23,14 @@ package object randagen {
   type Mapper[I,O] = (I => O)
 
   /**
-    * Event generator is a user supplied definition of how DataSet is generated
-    * It is a function because it created #parallelism times
+    * Event generator is a user supplied definition of how DataSet is generated including serialization
+    * It is a function because it is being created #parallelism times
     * Commons Math is not thread safe hence each thread keeps its own generator instance
     */
   type EventGeneratorFactory = Parallelism => EventGenerator
+
+  /**
+    * EventDef factory is a user supplied definition of DataSet
+    */
+  type EventDefFactory = Parallelism => EventDef
 }

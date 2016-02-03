@@ -5,10 +5,9 @@ import java.time.temporal.ChronoUnit
 
 import org.apache.commons.math3.distribution.{UniformRealDistribution, UniformIntegerDistribution, NormalDistribution}
 
-
 object Samples {
 
-  def gwiSampleEventDef: Parallelism => List[FieldDef] = { implicit p =>
+  def gwiSampleEventDef: EventDefFactory = { implicit p =>
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
     def countries = {
       val list = List(
