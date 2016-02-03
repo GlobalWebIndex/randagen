@@ -1,10 +1,5 @@
 package gwi.randagen
 
-import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, Month}
-
-import org.apache.commons.math3.distribution.{UniformIntegerDistribution, NormalDistribution, UniformRealDistribution}
-
 /**
   * Distributions are sampled with progress of iteration mostly because of performance reasons, it allows for data distribution
   * without any CPU ticks. Since event can have thousands of fields, it is obvious that each field cannot hold it's own
@@ -21,29 +16,28 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
   * Each field will have it's own distribution - that's why Distribution and Mapper are passed as functions
   */
 object FieldDef {
-  def apply[I,O](name: String, countDist: Distribution[Int], dist: () => Distribution[I], mapper: () => Mapper[I,O]): FieldDef = {
-    def format(name: String, p: Progress, dist: Distribution[I], mapper: Mapper[I,O])(f: Format): String = f match {
-      case JsonFormat =>
-        val value = mapper.apply(dist.sample(p))
-        def formatValue =
-          if (value.isInstanceOf[String])
-            s"""\"$value\""""
-          else
-            value
-        s"""\"$name\": $formatValue"""
-      case _: DsvFormat =>
-        mapper.apply(dist.sample(p)).toString
-      case x =>
-        throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
+  def apply[I,O](name: String, countDistFn: () => Distribution[Int], distFn: () => Distribution[I], mapperFn: () => Mapper[I,O]): FieldDef = {
+    def format(countDist: Distribution[Int], dist: Distribution[I], mapper: Mapper[I,O])(p: Progress, f: Format): Iterator[String] = {
+      val count = countDist.sample(p)
+      val names = if (count == 1) Iterator(name) else Iterator.range(1, count).map(idx => s"${name}_$idx")
+      names.map { n =>
+        f match {
+          case JsonFormat =>
+            val value = mapper.apply(dist.sample(p))
+            def formatValue =
+              if (value.isInstanceOf[String])
+                s"""\"$value\""""
+              else
+                value
+            s"""\"$n\": $formatValue"""
+          case _: DsvFormat =>
+            mapper.apply(dist.sample(p)).toString
+          case x =>
+            throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
+        }
+      }
     }
-
-    p => {
-      val c = countDist.sample(p)
-      if (c > 1)
-        Iterator.range(1, c).map (idx => format(s"${name}_$idx", p, dist(), mapper())_)
-      else
-        Iterator(format(name, p, dist(), mapper())_)
-    }
+    format(countDistFn(), distFn(), mapperFn())
   }
 }
 
@@ -68,7 +62,7 @@ case object TsvFormat extends DsvFormat {
 trait EventGenerator {
   def format: Format
   def mkString(xs: Iterable[String]): String
-  def generate(p: Progress): String = mkString(eventDef.flatMap(_(p).map(_(format))))
+  def generate(p: Progress): String = mkString(eventDef.flatMap(_(p, format)))
   def eventDef: EventDef
 }
 case class DsvEventGenerator(val eventDef: EventDef, val format: DsvFormat) extends EventGenerator {

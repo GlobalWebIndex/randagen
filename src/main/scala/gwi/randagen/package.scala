@@ -9,10 +9,11 @@ package object randagen {
   type EventDef = List[FieldDef]
 
   /**
-    * Field definition is this complicated because each event can varying count of fields
-    * For instance FieldDef representing key-value query parameters can yield 1 - 1000 fields
+    * Field definition is lazy because :
+    *   1) each event can have varying count of fields (eg. FieldDef representing key-value query parameters can yield 1 - 1000 fields)
+    *   2) it is constructed for each thread because Commons Math distributions are not thread-safe
     */
-  type FieldDef = Progress => Iterator[Format => String]
+  type FieldDef = (Progress, Format) => Iterator[String]
 
   /**
     * Mappers are functions that take Distribution sample (usually Int and Double) as input
