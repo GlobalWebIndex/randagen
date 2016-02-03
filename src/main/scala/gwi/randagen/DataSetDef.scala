@@ -21,7 +21,7 @@ object FieldDef {
     val names = if (count == 1) Iterator(name) else Iterator.range(1, count).map(idx => s"${name}_$idx")
     names.map { n =>
       format match {
-        case JsonFormat =>
+        case _: JsonFormat =>
           val value = mapper.apply(dist.sample(progress))
           def formatValue =
             if (value.isInstanceOf[String])
@@ -40,12 +40,20 @@ object FieldDef {
 
 trait Format {
   def extension: String
+  def eolChar: String
 }
 trait DsvFormat extends Format {
   def delimiter: String
+  val eolChar = "\n"
 }
-case object JsonFormat extends Format {
+trait JsonFormat extends Format {
   val extension = "json"
+}
+case object DefaultJsonFormat extends JsonFormat {
+  val eolChar = ""
+}
+case object PrettyJsonFormat extends JsonFormat {
+  val eolChar = "\n"
 }
 case object CsvFormat extends DsvFormat {
   val extension = "csv"
@@ -63,11 +71,10 @@ trait EventGenerator {
   def eventDef: EventDef
 }
 case class DsvEventGenerator(val eventDef: EventDef, val format: DsvFormat) extends EventGenerator {
-  def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, "\n")
+  def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)
 }
-case class JsonEventGenerator(val eventDef: EventDef) extends EventGenerator {
-  def format = JsonFormat
-  def mkString(xs: Iterable[String]) = xs.mkString("{", ", ", "}\n")
+case class JsonEventGenerator(val eventDef: EventDef, val format: JsonFormat = DefaultJsonFormat) extends EventGenerator {
+  def mkString(xs: Iterable[String]) = xs.mkString("{", ", ", s"}${format.eolChar}")
 }
 
 object EventGenerator {
@@ -81,6 +88,7 @@ object EventGenerator {
   }
 
   private def apply(format: String, eventDef: EventDef) = format match {
+    case "pretty-json" => JsonEventGenerator(eventDef, PrettyJsonFormat)
     case "json" => JsonEventGenerator(eventDef)
     case "csv" => DsvEventGenerator(eventDef, CsvFormat)
     case "tsv" => DsvEventGenerator(eventDef, TsvFormat)
