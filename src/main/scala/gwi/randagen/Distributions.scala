@@ -18,6 +18,10 @@ object Linear extends Distribution[Int] {
   def sample(progress: Progress): Int = progress.idx
 }
 
+case class Constant[T](v: T) extends Distribution[T] {
+  def sample(progress: Progress): T = v
+}
+
 case class Random(cardinalityRatio: Int = 100) extends Distribution[Int] {
   require(cardinalityRatio > 0 && cardinalityRatio <= 100, s"Ratio $cardinalityRatio is not valid, please define value between 0 - 100 exclusive !!!")
   private def sampleWithCardinality(progress: Progress): Int = {
