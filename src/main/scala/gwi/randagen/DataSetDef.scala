@@ -11,33 +11,30 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
 /**
   * FieldDef is a definition of a single field/column
   *
-  * @note that it has `count` property which specifies into how many fields should this definition be expanded to
+  * @note that it has `count` distribution which specifies into how many fields should this definition be expanded to
   * All fields will be identical with name suffixed with number
   * Each field will have it's own distribution - that's why Distribution and Mapper are passed as functions
   */
 object FieldDef {
-  def apply[I,O](name: String, countDistFn: () => Distribution[Int], distFn: () => Distribution[I], mapperFn: () => Mapper[I,O]): FieldDef = {
-    def format(countDist: Distribution[Int], dist: Distribution[I], mapper: Mapper[I,O])(p: Progress, f: Format): Iterator[String] = {
-      val count = countDist.sample(p)
-      val names = if (count == 1) Iterator(name) else Iterator.range(1, count).map(idx => s"${name}_$idx")
-      names.map { n =>
-        f match {
-          case JsonFormat =>
-            val value = mapper.apply(dist.sample(p))
-            def formatValue =
-              if (value.isInstanceOf[String])
-                s"""\"$value\""""
-              else
-                value
-            s"""\"$n\": $formatValue"""
-          case _: DsvFormat =>
-            mapper.apply(dist.sample(p)).toString
-          case x =>
-            throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
-        }
+  def apply[I,O](name: String, countDist: Distribution[Int], dist: Distribution[I], mapper: Mapper[I,O]): FieldDef = { (progress, format) =>
+    val count = countDist.sample(progress)
+    val names = if (count == 1) Iterator(name) else Iterator.range(1, count).map(idx => s"${name}_$idx")
+    names.map { n =>
+      format match {
+        case JsonFormat =>
+          val value = mapper.apply(dist.sample(progress))
+          def formatValue =
+            if (value.isInstanceOf[String])
+              s"""\"$value\""""
+            else
+              value
+          s"""\"$n\": $formatValue"""
+        case _: DsvFormat =>
+          mapper.apply(dist.sample(progress)).toString
+        case x =>
+          throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
       }
     }
-    format(countDistFn(), distFn(), mapperFn())
   }
 }
 
