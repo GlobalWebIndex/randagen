@@ -1,11 +1,15 @@
 package gwi.randagen
 
-import java.text.DecimalFormat
+import java.text.{DecimalFormatSymbols, DecimalFormat}
 
 import scala.math.BigDecimal.RoundingMode._
 
 case class Report(eventCount: Int, producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
-  val formatter = new DecimalFormat("#,###")
+  val formatter = {
+    val symbols = DecimalFormatSymbols.getInstance()
+    symbols.setGroupingSeparator(' ')
+    new DecimalFormat("#,###", symbols)
+  }
   def scale(value: Double) = BigDecimal(value).setScale(2, HALF_UP)
   def zipByThread(xs: Iterable[Long]) = xs.zipWithIndex.map(t => s"${t._2} thread : ${formatter.format(t._1)} ms").mkString("\n", "\n", "")
   override def toString = {
