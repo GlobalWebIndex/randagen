@@ -3,7 +3,7 @@ package gwi.randagen
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, Month}
 
-import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDistribution}
+import org.apache.commons.math3.distribution.{UniformIntegerDistribution, NormalDistribution, UniformRealDistribution}
 
 /**
   * Distributions are sampled with progress of iteration mostly because of performance reasons, it allows for data distribution
@@ -21,49 +21,62 @@ case class Progress(shuffledIdx: Int, idx: Int, total: Int)
   * Each field will have it's own distribution - that's why Distribution and Mapper are passed as functions
   */
 object FieldDef {
-  def apply[I,O](name: String, count: Int, dist: () => Distribution[I], mapper: () => Mapper[I,O]): IndexedSeq[FieldDef] = {
-    def format(name: String, dist: Distribution[I], mapper: Mapper[I,O])(format: String, progress: Progress): String = format match {
-      case "json" =>
-        val value = mapper.apply(dist.sample(progress))
+  def apply[I,O](name: String, countDist: Distribution[Int], dist: () => Distribution[I], mapper: () => Mapper[I,O]): FieldDef = {
+    def format(name: String, p: Progress, dist: Distribution[I], mapper: Mapper[I,O])(f: Format): String = f match {
+      case JsonFormat =>
+        val value = mapper.apply(dist.sample(p))
         def formatValue =
           if (value.isInstanceOf[String])
             s"""\"$value\""""
           else
             value
         s"""\"$name\": $formatValue"""
-      case dsv if dsv == "csv" || dsv == "tsv" =>
-        mapper.apply(dist.sample(progress)).toString
-      case x => throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
-
+      case _: DsvFormat =>
+        mapper.apply(dist.sample(p)).toString
+      case x =>
+        throw new IllegalArgumentException(s"Format $x not supported, please use 'json' or 'dsv' !!!")
     }
 
-    if (count > 1)
-      (0 until count).map (idx => format(s"${name}_$idx", dist(), mapper())_)
-    else
-      IndexedSeq(format(name, dist(), mapper())_)
+    p => {
+      val c = countDist.sample(p)
+      if (c > 1)
+        Iterator.range(1, c).map (idx => format(s"${name}_$idx", p, dist(), mapper())_)
+      else
+        Iterator(format(name, p, dist(), mapper())_)
+    }
   }
 }
 
-trait EventGenerator {
-  def format: String
-  def generate(progress: Progress): String
-  def fieldDefs: EventDef
+trait Format {
+  def extension: String
 }
-trait DsvEventGenerator extends EventGenerator {
+trait DsvFormat extends Format {
   def delimiter: String
-  def generate(progress: Progress): String = fieldDefs.map(_(format, progress)).mkString("", delimiter, "\n")
 }
-case class JsonEventGenerator(val fieldDefs: EventDef) extends EventGenerator {
-  def format: String = "json"
-  def generate(progress: Progress): String = fieldDefs.map(_(format, progress)).mkString("{", ", ", "}")
+case object JsonFormat extends Format {
+  val extension = "json"
 }
-case class CsvEventGenerator(val fieldDefs: EventDef) extends DsvEventGenerator {
+case object CsvFormat extends DsvFormat {
+  val extension = "csv"
   val delimiter = ","
-  val format = "csv"
 }
-case class TsvEventGenerator(val fieldDefs: EventDef) extends DsvEventGenerator {
+case object TsvFormat extends DsvFormat {
+  val extension = "tsv"
   val delimiter = "\t"
-  val format = "tsv"
+}
+
+trait EventGenerator {
+  def format: Format
+  def mkString(xs: Iterable[String]): String
+  def generate(p: Progress): String = mkString(eventDef.flatMap(_(p).map(_(format))))
+  def eventDef: EventDef
+}
+case class DsvEventGenerator(val eventDef: EventDef, val format: DsvFormat) extends EventGenerator {
+  def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, "\n")
+}
+case class JsonEventGenerator(val eventDef: EventDef) extends EventGenerator {
+  def format = JsonFormat
+  def mkString(xs: Iterable[String]) = xs.mkString("{", ", ", "}\n")
 }
 
 object EventGenerator {
@@ -78,8 +91,8 @@ object EventGenerator {
 
   private def apply(format: String, eventDef: EventDef) = format match {
     case "json" => JsonEventGenerator(eventDef)
-    case "csv" => CsvEventGenerator(eventDef)
-    case "tsv" => TsvEventGenerator(eventDef)
+    case "csv" => DsvEventGenerator(eventDef, CsvFormat)
+    case "tsv" => DsvEventGenerator(eventDef, TsvFormat)
   }
 
   private def sampleEventDef(implicit p: Parallelism): EventDef = {
@@ -92,35 +105,42 @@ object EventGenerator {
       list.zip(list.foldLeft(List(0.2)) { case (acc, _) => (acc.head * 1.1) :: acc }).toArray
     }
 
-    IndexedSeq(
-      FieldDef("time", 1,
+    List(
+      FieldDef("time",
+        Constant(1),
         () => Linear,
         () => TimeMapper("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.MILLIS, LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0))
       ),
-      FieldDef("gwid", 1,
+      FieldDef("gwid",
+        Constant(1),
         () => Random(50),
         () => new UuidMapper[Int]
       ),
-      FieldDef("country", 1,
+      FieldDef("country",
+        Constant(1),
         () => WeightedEnumeration[String](countries),
         () => new IdentityMapper[String]
       ),
-      FieldDef("section", 1,
+      FieldDef("section",
+        Constant(1),
         () => DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
-      FieldDef("purchase", 1,
+      FieldDef("purchase",
+        Constant(1),
         () => WeightedEnumeration[String](purchase),
         () => new IdentityMapper[String]
       ),
-      FieldDef("kv", 1000,
+      FieldDef("kv",
+        DistributedInteger(100, new UniformIntegerDistribution(1, 1000)),
         () => DistributedDouble(12, new NormalDistribution(0D, 0.2)),
         () => new IdentityMapper[Double]
       ),
-      FieldDef("price", 1,
+      FieldDef("price",
+        Constant(1),
         () => DistributedDouble(100, new UniformRealDistribution(1, 1000)),
         () => new RoundingMapper(2)
       )
-    ).flatten.toList
+    )
   }
 }

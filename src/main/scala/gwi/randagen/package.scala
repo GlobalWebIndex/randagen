@@ -6,9 +6,13 @@ package object randagen {
    * EventProducer is given Event Definition comprising of field definitions
    * It is basically a specification of how events should be generated
    */
-
-  type FieldDef = (String, Progress) => String
   type EventDef = List[FieldDef]
+
+  /**
+    * Field definition is this complicated because each event can varying count of fields
+    * For instance FieldDef representing key-value query parameters can yield 1 - 1000 fields
+    */
+  type FieldDef = Progress => Iterator[Format => String]
 
   /**
     * Mappers are functions that take Distribution sample (usually Int and Double) as input

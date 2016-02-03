@@ -32,7 +32,7 @@ class EventProducer(createGenerator: EventGeneratorFactory, consumer: EventConsu
           profile {
             it.foldLeft(0, new ArrayBuffer[Array[Byte]](batchSize)) { case ((byteSize, acc), (idx, shuffledIdx)) =>
               def pullEvent = producer.generate(Progress(shuffledIdx, idx, eventCount))
-              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = consumer.push(ConsumerRequest(s"${idx+1}.${producer.format}", loadSize, load.toArray))
+              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = consumer.push(ConsumerRequest(s"${idx+1}.${producer.format.extension}", loadSize, load.toArray))
 
               if (!it.hasNext) {
                 // last event
