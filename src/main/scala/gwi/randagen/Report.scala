@@ -22,7 +22,7 @@ case class Report(eventCount: Int, producerResponses: List[ProducerResponse], co
     lazy val dataThroughPut = scale(dataSize / slowestProducerTook * 1000D)
     lazy val eventThroughPut = scale(eventCount / (slowestProducerTook/1000D))
     s"""
-       |event count : $eventCount
+       |event count : ${formatter.format(eventCount)}
        |event generator creation took : $generators
        |data production took : $production
        |persistence by consumer took : $persistence ms
