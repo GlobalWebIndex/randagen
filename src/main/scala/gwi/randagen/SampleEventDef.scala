@@ -1,13 +1,13 @@
 package gwi.randagen
 
-import java.time.{Month, LocalDateTime}
 import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, Month}
 
-import org.apache.commons.math3.distribution.{UniformRealDistribution, UniformIntegerDistribution, NormalDistribution}
+import org.apache.commons.math3.distribution.{NormalDistribution, UniformIntegerDistribution, UniformRealDistribution}
 
-object Samples {
+object SampleEventDef extends EventDef {
 
-  def gwiSampleEventDef: EventDefFactory = { implicit p =>
+  def apply(implicit p: Parallelism): List[FieldDef] = {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
     def countries = {
       val list = List(

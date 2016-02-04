@@ -51,3 +51,11 @@ Or use it as a dependency :
 ```
 "net.globalwebindex" %% "randagen" % "0.7-SNAPSHOT"
 ```
+
+And use as a library :
+
+```
+RanDaGen.run(200000, 50, 10000000, Parallelism(4), JsonEventGenerator(), FsEventConsumer(targetPath), eventDef)
+```
+
+`eventDef` describes the whole data set, see the [Sample Event Definition!](src/main/scala/gwi/randagen/gwi.randagen/SampleEventDef.scala)

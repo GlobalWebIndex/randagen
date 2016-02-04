@@ -20,19 +20,19 @@ case class ProducerResponse(generatorsTook: FiniteDuration, producersTook: Finit
   * It can persist half a billion events with 30GB of data in 10 minutes using just 6GB of Heap.
   * It is able to generate randomly distributed data with predefined cardinality which is the main speed and data volume bottleneck
   */
-class EventProducer(createGenerator: EventGeneratorFactory, consumer: EventConsumer)(p: Parallelism) extends Profiling {
+class EventProducer(eventDef: EventDef, eventGenerator: EventGenerator, eventConsumer: EventConsumer)(p: Parallelism) extends Profiling {
 
   def generate(batchSize: Int, maxBatchByteSize: Int, eventCount: Int): Future[List[ProducerResponse]] = {
     ArrayUtils
       .range(eventCount)
       .shuffle
       .mapAsync(p.n) { it =>
-        val (producer, gTook) = profile(createGenerator(p))
+        val (fieldDefs, gTook) = profile(eventDef(p))
         val (_, pTook) =
           profile {
             it.foldLeft(0, new ArrayBuffer[Array[Byte]](batchSize)) { case ((byteSize, acc), (idx, shuffledIdx)) =>
-              def pullEvent = producer.generate(Progress(shuffledIdx, idx, eventCount))
-              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = consumer.push(ConsumerRequest(s"${idx+1}.${producer.format.extension}", loadSize, load.toArray))
+              def pullEvent = eventGenerator.generate(fieldDefs, Progress(shuffledIdx, idx, eventCount))
+              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = eventConsumer.push(ConsumerRequest(s"${idx+1}.${eventGenerator.format.extension}", loadSize, load.toArray))
 
               if (!it.hasNext) {
                 // last event

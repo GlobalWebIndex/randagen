@@ -2,9 +2,11 @@ package gwi.randagen
 
 import java.io.{ByteArrayInputStream, RandomAccessFile}
 import java.nio.channels.FileChannel
-import java.nio.file.Path
+import java.nio.file.{Paths, Path}
 import java.util.concurrent.LinkedBlockingQueue
 
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.regions.{Regions, Region}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ObjectMetadata
 import org.slf4j.LoggerFactory
@@ -73,5 +75,24 @@ case class S3EventConsumer(bucket: String, path: String, s3: AmazonS3Client) ext
     val fullPath = s"$path/$key"
     metaData.setContentLength(size)
     Try(s3.putObject(bucket, fullPath, new ByteArrayInputStream(bytes), metaData)).map(_ => ConsumerResponse(id, key, size, System.currentTimeMillis() - start)).get
+  }
+}
+
+object EventConsumer {
+  private def s3Client = {
+    def getEnv(key: String) = sys.env.getOrElse(key, throw new IllegalStateException(s"Please export $key as an environment variable !!!"))
+    val s3Client = new AmazonS3Client(new BasicAWSCredentials(getEnv("AWS_ACCESS_KEY_ID"), getEnv("AWS_SECRET_ACCESS_KEY")))
+    s3Client.setRegion(Region.getRegion(Regions.fromName(getEnv("AWS_DEFAULT_REGION"))))
+    s3Client
+  }
+
+  def apply(storage: String, path: String): EventConsumer = storage match {
+    case "fs" =>
+      FsEventConsumer(Paths.get(path))
+    case s3 if path.contains('@') =>
+      val parts = path.split('@')
+      S3EventConsumer(parts(0), parts(1), s3Client)
+    case _ =>
+      throw new IllegalArgumentException(s"Storage $storage and path $path are not valid !")
   }
 }
