@@ -76,12 +76,12 @@ object RanDaGen extends App {
           | Wrong arguments : ${x.mkString(" ")}
           | Please see :
           |
-          |   format   dataSet   batchSize   maxBatchSize-MB    totalEventCount  parallelism  storage        path
-          |   ------------------------------------------------------------------------------------------------------------
-          |   tsv       sample    2000000         50                10000000         4          s3         bucket@foo/bar
-          |   csv       sample    2000000         50                10000000         4          fs         /tmp
-          |   json      sample    2000000         50                10000000         4          fs         /tmp
-          |
+          |format      dataSet   batchSize   maxBatchSize-MB  totalEventCount  parallelism  storage   path
+          |-------------------------------------------------------------------------------------------------------
+          |tsv         sample    2000000          50              10000000         2          s3   bucket@foo/bar
+          |csv         sample    2000000          50              10000000         4          fs   /tmp/data
+          |json        sample    2000000          50              10000000         4          fs   /tmp/data
+          |pretty-json sample    2000000          50              10000000         2          s3   bucket@foo/bar
         """.stripMargin)
   }
 

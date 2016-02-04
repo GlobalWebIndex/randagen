@@ -5,7 +5,7 @@ import java.text.{DecimalFormatSymbols, DecimalFormat}
 import scala.math.BigDecimal.RoundingMode._
 
 case class Report(eventCount: Int, producerResponses: List[ProducerResponse], consumerResponses: List[ConsumerResponse]) {
-  val formatter = {
+  private val formatter = {
     val symbols = DecimalFormatSymbols.getInstance()
     symbols.setGroupingSeparator(' ')
     new DecimalFormat("#,###", symbols)

@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 case class TimeMapper(pattern: String, unit: ChronoUnit, start: LocalDateTime = LocalDateTime.now()) extends Mapper[Int,String] {
-  val formatter = DateTimeFormatter.ofPattern(pattern)
+  private val formatter = DateTimeFormatter.ofPattern(pattern)
   def apply(v: Int): String = start.plus(v, unit).format(formatter)
 }
 

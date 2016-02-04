@@ -65,10 +65,10 @@ case object TsvFormat extends DsvFormat {
 }
 
 trait EventGenerator {
-  def format: Format
-  def mkString(xs: Iterable[String]): String
-  def generate(p: Progress): String = mkString(eventDef.flatMap(_(p, format)))
-  def eventDef: EventDef
+  protected[this] def mkString(xs: Iterable[String]): String
+  protected[this] def eventDef: EventDef
+  protected[randagen] def format: Format
+  protected[randagen] def generate(p: Progress): String = mkString(eventDef.flatMap(_(p, format)))
 }
 case class DsvEventGenerator(val eventDef: EventDef, val format: DsvFormat) extends EventGenerator {
   def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)

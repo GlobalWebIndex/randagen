@@ -24,7 +24,8 @@ sealed trait EventConsumer extends Runnable {
   private val logger = LoggerFactory.getLogger(getClass)
   private val responses = List.newBuilder[ConsumerResponse]
   private val queue = new LinkedBlockingQueue[Request](4)
-  protected def consume(req: ConsumerRequest): ConsumerResponse
+
+  protected[this] def consume(req: ConsumerRequest): ConsumerResponse
 
   def getResponses: List[ConsumerResponse] = responses.result()
   def push(req: ConsumerRequest): Unit = queue.put(req)
