@@ -25,7 +25,7 @@ case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
 sealed trait EventConsumer extends Runnable {
   private val logger = LoggerFactory.getLogger(getClass)
   private val responses = List.newBuilder[ConsumerResponse]
-  private val queue = new LinkedBlockingQueue[Request](4)
+  private val queue = new LinkedBlockingQueue[Request](3)
 
   protected[this] def consume(req: ConsumerRequest): ConsumerResponse
 

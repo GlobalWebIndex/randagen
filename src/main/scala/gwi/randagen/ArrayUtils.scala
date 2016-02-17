@@ -26,8 +26,10 @@ object ArrayUtils {
     */
   def range(size: Int): Array[Int] = {
     val arr = new Array[Int](size)
-    for (idx <- 0 until size) {
-      arr.update(idx, idx)
+    var counter = 0
+    while (counter < size) {
+      arr.update(counter, counter)
+      counter += 1
     }
     arr
   }
@@ -52,11 +54,11 @@ object ArrayUtils {
     *
     * 2) perform initialization logic before asynchronous execution, because Commons Math is mostly not thread safe
     */
-  implicit class ArrayPimp[T](underlying: Array[T]) {
+  implicit class IntArrayPimp(underlying: Array[Int]) {
 
-    private def arrayIterators(partition: (Int,Int)): Iterator[(Int, T)] = {
+    private def arrayIterators(partition: (Int,Int)): Iterator[(Int, Int)] = {
       val (fromIdx, untilIdx) = partition
-      new AbstractIterator[(Int, T)] {
+      new AbstractIterator[(Int, Int)] {
         private var idx = fromIdx
         def hasNext: Boolean = idx <= untilIdx
         def next() = {
@@ -93,21 +95,23 @@ object ArrayUtils {
       *       because the primitive 32bits Ints itself take 4GBs
       *       random shuffling cannot be done lazily !!!
       */
-    def shuffle: Array[T] = {
+    def shuffle: Array[Int] = {
       val rd = new SplittableRandom()
       def swap(i1: Int, i2: Int) = {
         val tmp = underlying(i1)
         underlying(i1) = underlying(i2)
         underlying(i2) = tmp
       }
-      for (n <- underlying.length to 2 by -1) {
-        swap(n - 1, rd.nextInt(n))
+      var counter = underlying.length
+      while (counter > 1) {
+        swap(counter - 1, rd.nextInt(counter))
+        counter -= 1
       }
       underlying
     }
 
     import scala.concurrent.ExecutionContext.Implicits.global
-    def mapAsync[R](parallelism: Int)(fn: Iterator[(Int,T)] => R): Future[List[R]] =
+    def mapAsync[R](parallelism: Int)(fn: Iterator[(Int,Int)] => R): Future[List[R]] =
       Future.sequence(arrayPartitions(parallelism).map(arrayIterators).map( it => Future(fn(it))))
 
   }

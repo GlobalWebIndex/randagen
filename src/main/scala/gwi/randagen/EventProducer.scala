@@ -1,6 +1,6 @@
 package gwi.randagen
 
-import gwi.randagen.ArrayUtils.ArrayPimp
+import gwi.randagen.ArrayUtils.IntArrayPimp
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
