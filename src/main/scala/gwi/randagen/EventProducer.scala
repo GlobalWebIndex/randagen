@@ -40,7 +40,7 @@ class EventProducer(eventDef: EventDef, eventGenerator: EventGenerator, eventCon
                 acc.append(bytes)
                 pushEvents(byteSize + bytes.length, acc)
                 0 -> ArrayBuffer.empty
-              } else if (byteSize > batchByteSize) {
+              } else if (byteSize > batchByteSize || acc.length == batchEventSize) {
                 // batch is ready
                 val bytes = pullEvent.getBytes
                 pushEvents(byteSize, acc)

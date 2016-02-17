@@ -52,7 +52,7 @@ object Build extends sbt.Build {
   )
 
   val testSettings = Seq(
-    testOptions in Test += Tests.Argument("-oDF"),
+    testOptions in Test += Tests.Argument("-oD"),
     parallelExecution in Test := false,
     parallelExecution in ThisBuild := false,
     parallelExecution in IntegrationTest := false,
