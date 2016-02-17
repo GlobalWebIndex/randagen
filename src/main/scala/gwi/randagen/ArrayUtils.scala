@@ -56,11 +56,12 @@ object ArrayUtils {
     */
   implicit class IntArrayPimp(underlying: Array[Int]) {
 
-    private def arrayIterators(partition: (Int,Int)): Iterator[(Int, Int)] = {
-      val (fromIdx, untilIdx) = partition
+    private[randagen] def arrayIterator(fromTo: (Int,Int)): Iterator[(Int, Int)] = {
+      val (fromIdx, toIdx) = fromTo
+      require(toIdx<underlying.length && fromIdx<=toIdx, s"from $fromIdx to $toIdx is not within ${underlying.length} range !!!")
       new AbstractIterator[(Int, Int)] {
         private var idx = fromIdx
-        def hasNext: Boolean = idx <= untilIdx
+        def hasNext: Boolean = idx <= toIdx
         def next() = {
           val result = idx -> underlying(idx)
           idx += 1
@@ -69,8 +70,9 @@ object ArrayUtils {
       }
     }
 
-    private def arrayPartitions(partitionCount: Int): List[(Int, Int)] = {
+    private[randagen] def arrayPartitions(partitionCount: Int): List[(Int, Int)] = {
       val arrLength = underlying.length
+      require(arrLength/partitionCount >= 2, "Array of size x can be partitioned by max x/2, partitioning becomes meaningless otherwise !!!")
       val partsSizes = ArrayBuffer.fill(Math.min(arrLength, partitionCount))(arrLength / partitionCount)
       (0 until arrLength % partitionCount).foldLeft(partsSizes) { case (acc, idx) =>
         acc.update(idx, acc(idx) + 1)
@@ -112,7 +114,7 @@ object ArrayUtils {
 
     import scala.concurrent.ExecutionContext.Implicits.global
     def mapAsync[R](parallelism: Int)(fn: Iterator[(Int,Int)] => R): Future[List[R]] =
-      Future.sequence(arrayPartitions(parallelism).map(arrayIterators).map( it => Future(fn(it))))
+      Future.sequence(arrayPartitions(parallelism).map(arrayIterator).map(it => Future(fn(it))))
 
   }
 }
