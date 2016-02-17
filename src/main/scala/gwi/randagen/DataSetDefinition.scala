@@ -83,7 +83,7 @@ object FieldDef {
     quantity.names(name, progress)
       .map { n =>
         format match {
-          case _: JsonFormat =>
+          case JsonFormat =>
             val value = mapper.apply(dist.sample(progress))
             def formatValue =
               if (value.isInstanceOf[String])

@@ -62,7 +62,6 @@ object RanDaGen extends App {
           |tsv          2000000         50              10000000         2          s3   bucket@foo/bar
           |csv          2000000         50              10000000         4          fs   /tmp/data
           |json         2000000         50              10000000         4          fs   /tmp/data
-          |pretty-json  2000000         50              10000000         2          s3   bucket@foo/bar
         """.stripMargin)
   }
 

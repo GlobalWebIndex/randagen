@@ -39,18 +39,16 @@ format    batchEventSize batchByteSize  totalEventCount  parallelism  storage   
 tsv          2000000         50              10000000         2          s3   bucket@foo/bar
 csv          2000000         50              10000000         4          fs   /tmp/data
 json         2000000         50              10000000         4          fs   /tmp/data
-pretty-json  2000000         50              10000000         2          s3   bucket@foo/bar
 ```
 
 Note ^^^ that 
- - `pretty-json` means that events are not delimited by EOL `\n` character
  - parallelism is decreased to just 2 cores when storing data to `s3` because it is way slower  
- - `batchByteSize` is a batch byte size restriction
-    - data will by stored to 50MB big files or s3Objects in case of `fs` or `s3` storage 
+ - `batchByteSize` is a batch **maximum** byte size restriction
+    - data will by stored to max 50MB big files or s3Objects in case of `fs` or `s3` storage 
  - `batchEventSize` similar to `batchByteSize`, but in case of fs/s3 storage it serves for structuring files/s3Objects into fs/s3 paths
     - paths will contain files with total of `batchEventSize` events, except for the last one which contains the remainder
 
- - using `batchByteSize` and `batchEventSize` one can simulate for instance time series data where each hour has ~ 2000000 events being stored in ~ 50MB big files
+ - using `batchByteSize` and `batchEventSize` one can simulate for instance time series data where each hour has ~ 2000000 events being stored in < 50MB big files
 
 Or use it as a dependency : 
 
@@ -61,7 +59,7 @@ Or use it as a dependency :
 And use as a library :
 
 ```
-RanDaGen.run(200000, 50, 10000000, Parallelism(4), JsonEventGenerator(), FsEventConsumer(targetPath), eventDef)
+RanDaGen.run(200000, 50, 10000000, Parallelism(4), JsonEventGenerator, FsEventConsumer(targetPath), eventDef)
 ```
 
 `eventDef` describes the whole data set, see the [Sample Event Definition!](src/main/scala/gwi/randagen/SampleEventDef.scala)

@@ -9,13 +9,8 @@ trait DsvFormat extends Format {
   def delimiter: String
   val eolChar = "\n"
 }
-trait JsonFormat extends Format {
+case object JsonFormat extends Format {
   val extension = "json"
-}
-case object DefaultJsonFormat extends JsonFormat {
-  val eolChar = ""
-}
-case object PrettyJsonFormat extends JsonFormat {
   val eolChar = "\n"
 }
 case object CsvFormat extends DsvFormat {
@@ -35,15 +30,15 @@ trait EventGenerator {
 case class DsvEventGenerator(val format: DsvFormat) extends EventGenerator {
   def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)
 }
-case class JsonEventGenerator(val format: JsonFormat = DefaultJsonFormat) extends EventGenerator {
+case object JsonEventGenerator extends EventGenerator {
+  def format = JsonFormat
   def mkString(xs: Iterable[String]) = xs.mkString("{", ", ", s"}${format.eolChar}")
 }
 
 object EventGenerator {
 
   def apply(format: String) = format match {
-    case "pretty-json" => JsonEventGenerator(PrettyJsonFormat)
-    case "json" => JsonEventGenerator(DefaultJsonFormat)
+    case "json" => JsonEventGenerator
     case "csv" => DsvEventGenerator(CsvFormat)
     case "tsv" => DsvEventGenerator(TsvFormat)
   }
