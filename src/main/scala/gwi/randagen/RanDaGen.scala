@@ -24,7 +24,7 @@ object RanDaGen extends App {
     println(Await.result(f, 4.hours))
   }
 
-  def run(batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDef): Future[Report] = {
+  def run(batchEventSize: Int, batchByteSize: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDef): Future[Report] = {
     def startConsumer = {
       val consumerThread = new Thread(consumer)
       consumerThread.start()
@@ -33,7 +33,7 @@ object RanDaGen extends App {
 
     def startProducer =
       new EventProducer(eventDef, generator, consumer)(p)
-        .generate(batchSize, maxBatchSize_MB * 1000000, totalEventCount)
+        .generate(batchEventSize, batchByteSize * 1000 * 1000, totalEventCount)
         .andThen {
           case Failure(ex) =>
             logger.error("Data generation failed !!!", ex)
@@ -57,7 +57,7 @@ object RanDaGen extends App {
           | Wrong arguments : ${x.mkString(" ")}
           | Please see :
           |
-          |format       batchSize  maxBatchSize-MB  totalEventCount  parallelism  storage   path
+          |format    batchEventSize batchByteSize  totalEventCount  parallelism  storage   path
           |---------------------------------------------------------------------------------------------
           |tsv          2000000         50              10000000         2          s3   bucket@foo/bar
           |csv          2000000         50              10000000         4          fs   /tmp/data

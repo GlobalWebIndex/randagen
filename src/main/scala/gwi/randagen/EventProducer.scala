@@ -22,17 +22,17 @@ case class ProducerResponse(generatorsTook: FiniteDuration, producersTook: Finit
   */
 class EventProducer(eventDef: EventDef, eventGenerator: EventGenerator, eventConsumer: EventConsumer)(p: Parallelism) extends Profiling {
 
-  def generate(batchSize: Int, maxBatchByteSize: Int, eventCount: Int): Future[List[ProducerResponse]] = {
+  def generate(batchEventSize: Int, batchByteSize: Int, totalEventCount: Int): Future[List[ProducerResponse]] = {
     ArrayUtils
-      .range(eventCount)
+      .range(totalEventCount)
       .shuffle
       .mapAsync(p.n) { it =>
         val (fieldDefs, gTook) = profile(eventDef(p))
         val (_, pTook) =
           profile {
-            it.foldLeft(0, new ArrayBuffer[Array[Byte]](batchSize)) { case ((byteSize, acc), (idx, shuffledIdx)) =>
-              def pullEvent = eventGenerator.generate(fieldDefs, Progress(shuffledIdx, idx, eventCount))
-              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = eventConsumer.push(ConsumerRequest(s"${idx+1}.${eventGenerator.format.extension}", loadSize, load.toArray))
+            it.foldLeft(0, new ArrayBuffer[Array[Byte]](32768)) { case ((byteSize, acc), (idx, shuffledIdx)) =>
+              def pullEvent = eventGenerator.generate(fieldDefs, Progress(shuffledIdx, idx, totalEventCount))
+              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = eventConsumer.push(ConsumerRequest(idx+1, eventGenerator.format.extension, (idx+1)/batchEventSize, loadSize, load.toArray))
 
               if (!it.hasNext) {
                 // last event
@@ -40,11 +40,11 @@ class EventProducer(eventDef: EventDef, eventGenerator: EventGenerator, eventCon
                 acc.append(bytes)
                 pushEvents(byteSize + bytes.length, acc)
                 0 -> ArrayBuffer.empty
-              } else if (byteSize > maxBatchByteSize || acc.length == batchSize) {
+              } else if (byteSize > batchByteSize) {
                 // batch is ready
                 val bytes = pullEvent.getBytes
                 pushEvents(byteSize, acc)
-                bytes.length -> new ArrayBuffer(batchSize).+=(bytes)
+                bytes.length -> new ArrayBuffer(32768).+=(bytes)
               } else {
                 val bytes = pullEvent.getBytes
                 byteSize + bytes.length -> acc.+=(bytes)
