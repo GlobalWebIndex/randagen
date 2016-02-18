@@ -17,7 +17,7 @@ trait EventDefFactory {
   def apply(implicit p: Parallelism): EventDef
 }
 
-case class EventDef(pathDef: PathDef, fieldDefs: List[FieldDef])
+case class EventDef(fieldDefs: List[FieldDef], pathDefOpt: Option[PathDef])
 
 /**
   * FieldDef is a definition of a single field/column

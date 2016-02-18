@@ -15,7 +15,7 @@ import scala.util.Try
 
 sealed trait Request
 object PoisonPill extends Request
-case class ConsumerRequest(path: String, eventIdx: Int, ext: String, totalSize: Int, batchLoad: Array[Array[Byte]]) extends Request
+case class ConsumerRequest(pathOpt: Option[String], eventIdx: Int, ext: String, totalSize: Int, batchLoad: Array[Array[Byte]]) extends Request
 case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
 
 /**
@@ -53,13 +53,18 @@ case class FsEventConsumer(targetDir: Path) extends EventConsumer {
 
   def consume(req: ConsumerRequest): ConsumerResponse = {
     val start = System.currentTimeMillis()
-    val ConsumerRequest(path, eventIdx, ext, size, load) = req
+    val ConsumerRequest(pathOpt, eventIdx, ext, size, load) = req
     val name = s"$eventIdx.$ext"
     val bytes = ArrayUtils.flattenArray(load, Option(size))
     val byteSize = bytes.length
-    val dir = targetDir.resolve(path)
-    dir.toFile.mkdirs()
-    val file = dir.resolve(name).toFile
+    val file =
+      pathOpt match {
+        case Some(path) =>
+          val dir = targetDir.resolve(path)
+          dir.toFile.mkdirs()
+          dir.resolve(name).toFile
+        case None => targetDir.resolve(name).toFile
+      }
     require(byteSize > 0, s"Please don't flush empty content to file ${file.getAbsolutePath}")
     val rwChannel = new RandomAccessFile(file, "rw").getChannel
     try rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, byteSize).put(bytes) finally rwChannel.close()
@@ -72,11 +77,14 @@ case class S3EventConsumer(bucket: String, path: String, s3: AmazonS3Client) ext
   lazy val id = s"S3 $bucket:$path"
   def consume(req: ConsumerRequest): ConsumerResponse = {
     val start = System.currentTimeMillis()
-    val ConsumerRequest(path, eventIdx, ext, size, load) = req
+    val ConsumerRequest(pathOpt, eventIdx, ext, size, load) = req
     val key = s"$eventIdx.$ext"
     val bytes = ArrayUtils.flattenArray(load, Option(size))
     val metaData = new ObjectMetadata()
-    val fullPath = s"$path/$path/$key"
+    val fullPath = pathOpt match {
+      case Some(p) => s"$path/$p/$key"
+      case None => s"$path/$key"
+    }
     metaData.setContentLength(size)
     Try(s3.putObject(bucket, fullPath, new ByteArrayInputStream(bytes), metaData)).map(_ => ConsumerResponse(id, key, size, System.currentTimeMillis() - start)).get
   }

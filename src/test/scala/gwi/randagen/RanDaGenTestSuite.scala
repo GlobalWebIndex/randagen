@@ -3,7 +3,6 @@ package gwi.randagen
 import java.io.File
 import java.nio.file.Files
 import java.text.SimpleDateFormat
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.{Month, LocalDateTime}
 
@@ -24,7 +23,7 @@ class TestEventDefFactory(pathPattern: String, timestampPattern: String) extends
           TimeValueDef(Clock(timestampPattern, ChronoUnit.MILLIS, start))
         )
       )
-    EventDef(pathDef, fieldDefs)
+    EventDef(fieldDefs, Some(pathDef))
   }
 }
 

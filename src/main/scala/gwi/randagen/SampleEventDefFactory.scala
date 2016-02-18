@@ -67,6 +67,6 @@ object SampleEventDefFactory extends EventDefFactory {
         )
       )
 
-    EventDef(pathDef, fieldDefs)
+    EventDef(fieldDefs, Some(pathDef))
   }
 }

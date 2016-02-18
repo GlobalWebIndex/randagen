@@ -32,20 +32,20 @@ class EventProducer(eventDefFactory: EventDefFactory, eventGenerator: EventGener
           profile {
             it.foldLeft(Option.empty[String], 0, new ArrayBuffer[Array[Byte]](32768)) { case ((lastPathOpt, byteSize, acc), (idx, shuffledIdx)) =>
               def pullEvent = eventGenerator.generate(eventDef, Progress(shuffledIdx, idx, totalEventCount))
-              def pushEvents(path: String, loadSize: Int, load: ArrayBuffer[Array[Byte]]) =
+              def pushEvents(path: Option[String], loadSize: Int, load: ArrayBuffer[Array[Byte]]) =
                 eventConsumer.push(ConsumerRequest(path, idx+1, eventGenerator.format.extension, loadSize, load.toArray))
 
-              val Event(path, field) = pullEvent
+              val Event(field, pathOpt) = pullEvent
               val bytes = field.getBytes
               if (!it.hasNext) { // last event
                 acc.append(bytes)
-                pushEvents(path, byteSize + bytes.length, acc)
-                (Some(path), 0, ArrayBuffer.empty)
-              } else if (lastPathOpt.exists(_ != path) || byteSize > batchByteSize) { // batch is ready
-                pushEvents(lastPathOpt.get, byteSize, acc)
-                (Some(path), bytes.length, new ArrayBuffer(32768).+=(bytes))
+                pushEvents(pathOpt, byteSize + bytes.length, acc)
+                (pathOpt, 0, ArrayBuffer.empty)
+              } else if (lastPathOpt.exists(lp => pathOpt.exists(_ != lp)) || byteSize > batchByteSize) { // batch is ready
+                pushEvents(lastPathOpt, byteSize, acc)
+                (pathOpt, bytes.length, new ArrayBuffer(32768).+=(bytes))
               } else {
-                (Some(path), byteSize + bytes.length, acc.+=(bytes))
+                (pathOpt, byteSize + bytes.length, acc.+=(bytes))
               }
             }
           }
