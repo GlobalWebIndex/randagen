@@ -1,5 +1,8 @@
 package gwi.randagen
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.SplittableRandom
 
 import scala.collection.mutable.ArrayBuffer
@@ -17,6 +20,11 @@ trait Profiling {
     result -> (t1 - t0).nanoseconds
   }
 
+}
+
+case class Clock(pattern: String, unit: ChronoUnit, start: LocalDateTime = LocalDateTime.now()) {
+  private val formatter = DateTimeFormatter.ofPattern(pattern)
+  def rewindForwardBy(millis: Int): String = start.plus(millis, unit).format(formatter)
 }
 
 object ArrayUtils {

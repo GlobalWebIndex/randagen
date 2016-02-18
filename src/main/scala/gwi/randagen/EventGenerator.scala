@@ -22,10 +22,13 @@ case object TsvFormat extends DsvFormat {
   val delimiter = "\t"
 }
 
+case class Event(path: String, field: String)
+
 trait EventGenerator {
   protected[this] def mkString(xs: Iterable[String]): String
   protected[randagen] def format: Format
-  protected[randagen] def generate(eventDef: List[FieldDef], p: Progress): String = mkString(eventDef.flatMap(_(p, format)))
+  protected[randagen] def generate(eventDef: EventDef, p: Progress): Event =
+    Event(eventDef.pathDef.generate(p), mkString(eventDef.fieldDefs.flatMap(_(p, format))))
 }
 case class DsvEventGenerator(val format: DsvFormat) extends EventGenerator {
   def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)

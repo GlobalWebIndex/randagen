@@ -20,34 +20,32 @@ case class ProducerResponse(generatorsTook: FiniteDuration, producersTook: Finit
   * It can persist half a billion events with 30GB of data in 10 minutes using just 6GB of Heap.
   * It is able to generate randomly distributed data with predefined cardinality which is the main speed and data volume bottleneck
   */
-class EventProducer(eventDef: EventDef, eventGenerator: EventGenerator, eventConsumer: EventConsumer)(p: Parallelism) extends Profiling {
+class EventProducer(eventDefFactory: EventDefFactory, eventGenerator: EventGenerator, eventConsumer: EventConsumer)(p: Parallelism) extends Profiling {
 
   def generate(batchByteSize: Int, totalEventCount: Int): Future[List[ProducerResponse]] = {
     ArrayUtils
       .range(totalEventCount)
       .shuffle
       .mapAsync(p.n) { it =>
-        val (fieldDefs, gTook) = profile(eventDef(p))
+        val (eventDef, gTook) = profile(eventDefFactory(p))
         val (_, pTook) =
           profile {
-            it.foldLeft(0, new ArrayBuffer[Array[Byte]](32768)) { case ((byteSize, acc), (idx, shuffledIdx)) =>
-              def pullEvent = eventGenerator.generate(fieldDefs, Progress(shuffledIdx, idx, totalEventCount))
-              def pushEvents(loadSize: Int, load: ArrayBuffer[Array[Byte]]) = eventConsumer.push(ConsumerRequest(idx+1, eventGenerator.format.extension, loadSize, load.toArray))
+            it.foldLeft(Option.empty[String], 0, new ArrayBuffer[Array[Byte]](32768)) { case ((lastPathOpt, byteSize, acc), (idx, shuffledIdx)) =>
+              def pullEvent = eventGenerator.generate(eventDef, Progress(shuffledIdx, idx, totalEventCount))
+              def pushEvents(path: String, loadSize: Int, load: ArrayBuffer[Array[Byte]]) =
+                eventConsumer.push(ConsumerRequest(path, idx+1, eventGenerator.format.extension, loadSize, load.toArray))
 
-              if (!it.hasNext) {
-                // last event
-                val bytes = pullEvent.getBytes
+              val Event(path, field) = pullEvent
+              val bytes = field.getBytes
+              if (!it.hasNext) { // last event
                 acc.append(bytes)
-                pushEvents(byteSize + bytes.length, acc)
-                0 -> ArrayBuffer.empty
-              } else if (byteSize > batchByteSize) {
-                // batch is ready
-                val bytes = pullEvent.getBytes
-                pushEvents(byteSize, acc)
-                bytes.length -> new ArrayBuffer(32768).+=(bytes)
+                pushEvents(path, byteSize + bytes.length, acc)
+                (Some(path), 0, ArrayBuffer.empty)
+              } else if (lastPathOpt.exists(_ != path) || byteSize > batchByteSize) { // batch is ready
+                pushEvents(lastPathOpt.get, byteSize, acc)
+                (Some(path), bytes.length, new ArrayBuffer(32768).+=(bytes))
               } else {
-                val bytes = pullEvent.getBytes
-                byteSize + bytes.length -> acc.+=(bytes)
+                (Some(path), byteSize + bytes.length, acc.+=(bytes))
               }
             }
           }

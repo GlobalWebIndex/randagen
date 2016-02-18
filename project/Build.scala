@@ -99,7 +99,7 @@ object Build extends sbt.Build {
       organization := "net.globalwebindex",
       name := "randagen",
       scalaVersion := "2.11.7",
-      version := "0.8-SNAPSHOT",
+      version := "0.9-SNAPSHOT",
       scalacOptions ++= Seq(
         "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
         "-Xlint", "-Xfuture",

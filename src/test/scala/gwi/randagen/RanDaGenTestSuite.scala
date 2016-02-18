@@ -2,14 +2,36 @@ package gwi.randagen
 
 import java.io.File
 import java.nio.file.Files
+import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.time.{Month, LocalDateTime}
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FreeSpec, Matchers}
 
+import scala.io.Source
+
+class TestEventDefFactory(pathPattern: String, timestampPattern: String) extends EventDefFactory {
+  def apply(implicit p: Parallelism): EventDef = {
+    val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0)
+    val pathDef = TimePathDef(Clock(pathPattern, ChronoUnit.MILLIS, start))
+    val fieldDefs =
+      List(
+        FieldDef(
+          "time",
+          Linear,
+          TimeValueDef(Clock(timestampPattern, ChronoUnit.MILLIS, start))
+        )
+      )
+    EventDef(pathDef, fieldDefs)
+  }
+}
+
 class RanDaGenTestSuite extends FreeSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
-  import gwi.randagen.ArrayUtils.IntArrayPimp
 
   val tmpDir = new File(sys.props("java.io.tmpdir") + "/" + scala.util.Random.nextInt(1000))
+  tmpDir.mkdirs()
 
   override def afterAll = deleteDir(tmpDir)
 
@@ -34,54 +56,26 @@ class RanDaGenTestSuite extends FreeSpec with Matchers with ScalaFutures with Be
     }
   }
 
-  "flattening array should work" in {
-    val target =
-      Array(
-        Array('a', 'b', 'c').map(_.toByte),
-        Array('d', 'e', 'f').map(_.toByte),
-        Array('g', 'h', 'i').map(_.toByte)
-      )
-
-    val expected = Array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i').map(_.toByte)
-    val actual = ArrayUtils.flattenArray(target)
-    assertResult(expected)(actual)
-  }
-
-  "ranging array should work" in {
-    assertResult(Array(0,1,2)) (ArrayUtils.range(3))
-    assertResult(Array(0)) (ArrayUtils.range(1))
-    assertResult(Array()) (ArrayUtils.range(0))
-  }
-
-  "array partitions should work" in {
-    assertResult(List((0,11))) ((0 until 12).toArray.arrayPartitions(1))
-    assertResult(List((0,5), (6,11))) ((0 until 12).toArray.arrayPartitions(2))
-    assertResult(List((0,3), (4,7), (8,11))) ((0 until 12).toArray.arrayPartitions(3))
-    assertResult(List((0,2), (3,5), (6,8), (9,11))) ((0 until 12).toArray.arrayPartitions(4))
-    assertResult(List((0,2), (3,5), (6,7), (8,9), (10,11))) ((0 until 12).toArray.arrayPartitions(5))
-    assertResult(List((0,1), (2,3), (4,5), (6,7), (8,9), (10,11))) ((0 until 12).toArray.arrayPartitions(6))
-    assertThrows[IllegalArgumentException]((0 until 12).toArray.arrayPartitions(7))
-  }
-
-  "array iterators should work" in {
-    assertResult(List((0,0), (1,1), (2,2))) (Array(0,1,2,3).arrayIterator((0,2)).toList)
-    assertResult(List((0,0))) (Array(0,1).arrayIterator((0,0)).toList)
-    assertThrows[IllegalArgumentException](Array(0,1).arrayIterator((0,2)).toList)
-  }
-
-  "array shuffle should work" in {
-    assert(Array(1,2,3).shuffle.length == 3)
-    assertResult(Set(1,2,3)) (Array(1,2,3).shuffle.toSet)
-    assertResult(Array(1)) (Array(1).shuffle)
-    assertResult(Array()) (Array[Int]().shuffle)
-  }
-
-  "map async should work" in {
-    val f2 = ArrayUtils.range(6).mapAsync(3)(_.toList)
-    whenReady(f2) { r =>
-      assert(r.length == 3)
-      assertResult(List(List((0,0), (1,1)), List((2,2), (3,3)), List((4,4), (5,5)))) (r)
+  private def testThatEventsInFilesOnTimeBasedPathHaveCorrectTimestamps(byteSize: Int) = {
+    def targetDir = listAllFiles(tmpDir).head.getParentFile.getParentFile
+    val pathPattern = "yyyy'/'MM'/'dd'/'HH'/'mm'/'ss"
+    val timestampPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+    val fieldFormatter = new SimpleDateFormat(timestampPattern)
+    val directoryFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    val f = RanDaGen.run(byteSize, 10000, Parallelism(4), DsvEventGenerator(TsvFormat), FsEventConsumer(tmpDir.toPath), new TestEventDefFactory(pathPattern, timestampPattern))
+    whenReady(f) { r =>
+      targetDir.listFiles().foreach { d =>
+        val timestamps =
+          d.listFiles().map(Source.fromFile).flatMap(_.getLines).map { timeStamp =>
+            directoryFormatter.format(fieldFormatter.parse(timeStamp))
+          }
+        assert(timestamps.toSet.size == 1, "Time path must contain only timestamps that belong to it!!!")
+      }
     }
   }
 
+  "RanDaGen should generate files based on" - {
+    "path provided" in testThatEventsInFilesOnTimeBasedPathHaveCorrectTimestamps(1000*1000)
+    "byte size and path provided" in testThatEventsInFilesOnTimeBasedPathHaveCorrectTimestamps(100)
+  }
 }
