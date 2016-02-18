@@ -1,7 +1,7 @@
 **High performance generator of data**
 
 It is able to generate data :
- - randomly
+ - randomly distributed
     - On SSD it can persist a billion events to FileSystem with 60GB of data in 20 minutes using just 6GB of Heap 
     - it is basically as fast as your SSD, I benched ~ **90MB/s** 
     - note that s3 upload is way slower
@@ -14,7 +14,9 @@ It is able to generate data :
     - expect performance decrease in case you are not running on quad-core processor, bottleneck can move from IO to CPU (not on s3)
     - ie. events of 1000 fields each with its own Normal distribution(mean 0, variance 0.2) are generated **70MB/s** on quad-core with parallelism 4
  - on custom automatically generated paths
-    - TimeSeries data is commonly stored to paths having pattern like yyyy/MM/dd/HH because having a directory with terabytes or millions of files is a nightmare
+    - TimeSeries data is commonly stored to paths having pattern like yyyy/MM/dd/HH because having a directory millions of files is a nightmare
+ - to files/s3Objects of a certain size limit
+    - technologies mostly cannot deal with huge files, so having a chance to limit file size to say 50MB is a MUST
  
 ## How to
 
@@ -48,13 +50,11 @@ Note ^^^ that
  - `batchByteSize` is a batch **maximum** byte size restriction
     - data will by stored to max 50MB big files or s3Objects in case of `fs` or `s3` storage 
 
-Or use it as a dependency : 
+Or use it as a dependency / library : 
 
 ```
 "net.globalwebindex" %% "randagen" % "0.9-SNAPSHOT"
 ```
-
-And use as a library :
 
 ```
 RanDaGen.run(50, 10000000, Parallelism(4), JsonEventGenerator, FsEventConsumer(targetPath), eventDefFactory)
