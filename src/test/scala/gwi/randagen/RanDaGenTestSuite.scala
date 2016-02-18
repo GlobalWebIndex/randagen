@@ -84,14 +84,4 @@ class RanDaGenTestSuite extends FreeSpec with Matchers with ScalaFutures with Be
     }
   }
 
-  "RanDaGen should work" in {
-    tmpDir.mkdir()
-    val f = RanDaGen.run(10, 1, 120, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath), SampleEventDef)
-    whenReady(f) { r =>
-      val allFiles = listAllFiles(tmpDir)
-      assert(allFiles.size == 12)
-      assert(tmpDir.listFiles().length == 12)
-    }
-  }
-
 }

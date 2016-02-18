@@ -10,11 +10,10 @@ import scala.util.{Failure, Success}
 object RanDaGen extends App {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  private def runMain(format: String, batchSize: Int, maxBatchSize_MB: Int, totalEventCount: Int, parallelism: Int, storage: String, path: String) = {
+  private def runMain(format: String, batchSize_MB: Int, totalEventCount: Int, parallelism: Int, storage: String, path: String) = {
     val f =
       run(
-        batchSize,
-        maxBatchSize_MB,
+        batchSize_MB,
         totalEventCount,
         Parallelism(parallelism),
         EventGenerator(format),
@@ -24,7 +23,7 @@ object RanDaGen extends App {
     println(Await.result(f, 4.hours))
   }
 
-  def run(batchEventSize: Int, batchByteSize: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDef): Future[Report] = {
+  def run(batchByteSize: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDef): Future[Report] = {
     def startConsumer = {
       val consumerThread = new Thread(consumer)
       consumerThread.start()
@@ -33,7 +32,7 @@ object RanDaGen extends App {
 
     def startProducer =
       new EventProducer(eventDef, generator, consumer)(p)
-        .generate(batchEventSize, batchByteSize * 1000 * 1000, totalEventCount)
+        .generate(batchByteSize * 1024 * 1000, totalEventCount)
         .andThen {
           case Failure(ex) =>
             logger.error("Data generation failed !!!", ex)
@@ -49,19 +48,19 @@ object RanDaGen extends App {
   }
 
   args.toList match {
-    case format :: batchSize :: maxBatchSize_MB :: totalEventCount :: parallelism :: storage :: path :: Nil =>
-      runMain(format, batchSize.toInt, maxBatchSize_MB.toInt, totalEventCount.toInt, parallelism.toInt, storage, path)
+    case format :: batchSize_MB :: totalEventCount :: parallelism :: storage :: path :: Nil =>
+      runMain(format, batchSize_MB.toInt, totalEventCount.toInt, parallelism.toInt, storage, path)
     case x =>
       println(
         s"""
           | Wrong arguments : ${x.mkString(" ")}
           | Please see :
           |
-          |format    batchEventSize batchByteSize  totalEventCount  parallelism  storage   path
+          |format  batchByteSize  totalEventCount  parallelism  storage   path
           |---------------------------------------------------------------------------------------------
-          |tsv          2000000         50              10000000         2          s3   bucket@foo/bar
-          |csv          2000000         50              10000000         4          fs   /tmp/data
-          |json         2000000         50              10000000         4          fs   /tmp/data
+          |tsv          50              10000000         2          s3   bucket@foo/bar
+          |csv          50              10000000         4          fs   /tmp/data
+          |json         50              10000000         4          fs   /tmp/data
         """.stripMargin)
   }
 

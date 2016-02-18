@@ -15,7 +15,7 @@ import scala.util.Try
 
 sealed trait Request
 object PoisonPill extends Request
-case class ConsumerRequest(eventIdx: Int, ext: String, batchNumber: Int, totalSize: Int, batchLoad: Array[Array[Byte]]) extends Request
+case class ConsumerRequest(eventIdx: Int, ext: String, totalSize: Int, batchLoad: Array[Array[Byte]]) extends Request
 case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
 
 /**
@@ -53,13 +53,11 @@ case class FsEventConsumer(targetDir: Path) extends EventConsumer {
 
   def consume(req: ConsumerRequest): ConsumerResponse = {
     val start = System.currentTimeMillis()
-    val ConsumerRequest(eventIdx, ext, batchNumber, size, load) = req
+    val ConsumerRequest(eventIdx, ext, size, load) = req
     val name = s"$eventIdx.$ext"
     val bytes = ArrayUtils.flattenArray(load, Option(size))
     val byteSize = bytes.length
-    val dir = targetDir.resolve(batchNumber.toString)
-    dir.toFile.mkdirs()
-    val file = dir.resolve(name).toFile
+    val file = targetDir.resolve(name).toFile
     require(byteSize > 0, s"Please don't flush empty content to file ${file.getAbsolutePath}")
     val rwChannel = new RandomAccessFile(file, "rw").getChannel
     try rwChannel.map(FileChannel.MapMode.READ_WRITE, 0, byteSize).put(bytes) finally rwChannel.close()
@@ -72,11 +70,11 @@ case class S3EventConsumer(bucket: String, path: String, s3: AmazonS3Client) ext
   lazy val id = s"S3 $bucket:$path"
   def consume(req: ConsumerRequest): ConsumerResponse = {
     val start = System.currentTimeMillis()
-    val ConsumerRequest(eventIdx, ext, batchNumber, size, load) = req
+    val ConsumerRequest(eventIdx, ext, size, load) = req
     val key = s"$eventIdx.$ext"
     val bytes = ArrayUtils.flattenArray(load, Option(size))
     val metaData = new ObjectMetadata()
-    val fullPath = s"$path/$batchNumber/$key"
+    val fullPath = s"$path/$key"
     metaData.setContentLength(size)
     Try(s3.putObject(bucket, fullPath, new ByteArrayInputStream(bytes), metaData)).map(_ => ConsumerResponse(id, key, size, System.currentTimeMillis() - start)).get
   }

@@ -34,21 +34,17 @@ docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e
 
 Just use real arguments instead of `ARGS` ^, examples :
 ```
-format    batchEventSize batchByteSize  totalEventCount  parallelism  storage   path
+format  batchByteSize  totalEventCount  parallelism  storage   path
 ---------------------------------------------------------------------------------------------
-tsv          2000000         50              10000000         2          s3   bucket@foo/bar
-csv          2000000         50              10000000         4          fs   /tmp/data
-json         2000000         50              10000000         4          fs   /tmp/data
+tsv          50              10000000         2          s3   bucket@foo/bar
+csv          50              10000000         4          fs   /tmp/data
+json         50              10000000         4          fs   /tmp/data
 ```
 
 Note ^^^ that 
  - parallelism is decreased to just 2 cores when storing data to `s3` because it is way slower  
  - `batchByteSize` is a batch **maximum** byte size restriction
     - data will by stored to max 50MB big files or s3Objects in case of `fs` or `s3` storage 
- - `batchEventSize` similar to `batchByteSize`, but in case of fs/s3 storage it serves for structuring files/s3Objects into fs/s3 paths
-    - paths will contain files with total of `batchEventSize` events, except for the last one which contains the remainder
-
- - using `batchByteSize` and `batchEventSize` one can simulate for instance time series data where each hour has ~ 2000000 events being stored in < 50MB big files
 
 Or use it as a dependency : 
 
