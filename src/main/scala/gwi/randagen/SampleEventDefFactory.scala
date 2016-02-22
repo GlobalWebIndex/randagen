@@ -19,14 +19,14 @@ object SampleEventDefFactory extends EventDefFactory {
 
     val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0)
 
-    val pathDef = TimePathDef(Clock("yyyy'/'MM'/'dd'/'HH", ChronoUnit.MILLIS, start))
+    val pathDef = TimePathDef(Clock("yyyy'/'MM'/'dd'/'HH", ChronoUnit.SECONDS, start))
 
     val fieldDefs =
       List(
         FieldDef(
           "time",
           Linear,
-          TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.MILLIS, start))
+          TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.SECONDS, start))
         ),
         FieldDef(
           "gwid",
