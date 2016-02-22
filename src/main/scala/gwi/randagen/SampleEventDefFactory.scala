@@ -29,6 +29,11 @@ object SampleEventDefFactory extends EventDefFactory {
           TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.SECONDS, start))
         ),
         FieldDef(
+          "idx",
+          Linear,
+          new IdentityValueDef[Int]
+        ),
+        FieldDef(
           "gwid",
           Random(50),
           new UuidValueDef[Int]
