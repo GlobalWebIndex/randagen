@@ -109,7 +109,10 @@ object Build extends sbt.Build {
       autoCompilerPlugins := true,
       cancelable in Global := true,
       libraryDependencies ++= awsDeps ++ loggingDeps ++ testingDeps ++ Seq(
-        "org.apache.commons" % "commons-math3" % "3.6"
+        "org.apache.commons" % "commons-math3" % "3.6",
+        "com.fasterxml.jackson.core" % "jackson-core" % "2.6.3",
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.3",
+        "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.3"
       )
     ).settings(testSettings ++ publishSettings)
     .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.RanDaGen")):_*)
