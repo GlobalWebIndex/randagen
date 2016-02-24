@@ -57,13 +57,13 @@ object SampleEventDefFactory extends EventDefFactory {
           "kv_shared",
           DistributedDouble(100, new NormalDistribution(0D, 0.2)),
           new IdentityValueDef[Double],
-          SharedNamesQuantity(12, 20)
+          SharedNamesQuantity(3, 6)
         ),
         FieldDef(
           "kv_unique",
           DistributedDouble(100, new NormalDistribution(0D, 0.2)),
           new IdentityValueDef[Double],
-          DistinctNamesQuantity(12, 20)
+          SharedNamesQuantity(3, 6)
         ),
         FieldDef(
           "price",
