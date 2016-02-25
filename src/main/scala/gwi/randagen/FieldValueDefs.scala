@@ -3,7 +3,7 @@ package gwi.randagen
 import java.util.UUID
 
 /**
-  * Mappers are functions that take Distribution sample (usually Int and Double) as input
+  * FieldValueDefs are functions that take Distribution sample (usually Int and Double) as input
   * and generate some meaningful value as output (uuid, timeStamp, rounded double for pricing, etc.)
   */
 trait FieldValueDef[I,O] extends (I => O)

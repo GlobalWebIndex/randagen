@@ -5,7 +5,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import scala.io.Source
 import scala.util.{Success, Failure, Try}
 
-case class SampleEvent(time: String, gwid: String, country: String, section: Double, purchase: String, kv_shared: String, kv_unique: String, price: Double)
+case class SampleEvent(time: String, uuid: String, country: String, section: Double, purchase: String, kv_shared: String, kv_unique: String, price: Double)
 
 class RanDaGenTestSuite extends BaseSuite {
   implicit val futurePatience = PatienceConfig(timeout =  Span(5, Seconds), interval = Span(200, Millis))
@@ -44,12 +44,12 @@ class RanDaGenTestSuite extends BaseSuite {
     val tmpDir = getTmpDir
     val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath), SampleEventDefFactory)
     whenReady(f) { r =>
-      val gwidSet =
+      val uuidSet =
         listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
           val record = read[Map[String, Any]](line)
-          record("gwid")
+          record("uuid")
         }.toSet
-      assertResult(15001)(gwidSet.size)
+      assertResult(15001)(uuidSet.size)
     }
   }
 

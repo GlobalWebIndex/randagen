@@ -28,7 +28,7 @@ trait EventGenerator {
   protected[this] def mkString(xs: Iterable[String]): String
   protected[randagen] def format: Format
   protected[randagen] def generate(eventDef: EventDef, p: Progress): Event =
-    Event(mkString(eventDef.fieldDefs.flatMap(_(p, format))), eventDef.pathDefOpt.map(_.generate(p)))
+    Event(mkString(eventDef.fieldDefs.flatMap(_.generate(p, format))), eventDef.pathDefOpt.map(_.generate(p)))
 }
 case class DsvEventGenerator(val format: DsvFormat) extends EventGenerator {
   def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)
