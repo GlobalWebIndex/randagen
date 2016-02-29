@@ -18,7 +18,7 @@ object RanDaGen extends App {
         Parallelism(parallelism),
         EventGenerator(format),
         EventConsumer(storage, path),
-        SampleEventDefFactory
+        SampleEventDefFactory()
       )
     println(Await.result(f, 4.hours))
   }

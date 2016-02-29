@@ -5,7 +5,15 @@ import java.time.{LocalDateTime, Month}
 
 import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDistribution}
 
-object SampleEventDefFactory extends EventDefFactory {
+case class SampleEventDefFactory(
+          tickUnit: ChronoUnit = ChronoUnit.SECONDS,
+          uuidCardinalityRatio: Int = 50,
+          sectionDataPointsCount: Int = 10000,
+          priceDataPointsCount: Int = 100,
+          dynamicMaxSegmentSize: Int = 3,
+          dynamicMaxFieldCount: Int = 6,
+          dynamicDataPointsCount: Int = 100
+      ) extends EventDefFactory {
 
   def apply(implicit p: Parallelism): EventDef = {
     def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
@@ -19,14 +27,14 @@ object SampleEventDefFactory extends EventDefFactory {
 
     val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0)
 
-    val pathDef = TimePathDef(Clock("yyyy'/'MM'/'dd'/'HH", ChronoUnit.SECONDS, start))
+    val pathDef = TimePathDef(Clock("yyyy'/'MM'/'dd'/'HH", tickUnit, start))
 
     val fieldDefs =
       List(
         FieldDef(
-          "time", "timestamp incremented by one second in each event",
+          "time", s"timestamp incremented by one $tickUnit in each event",
           Linear,
-          TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", ChronoUnit.SECONDS, start))
+          TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", tickUnit, start))
         ),
         FieldDef(
           "idx", "growing number from 0 until total-number-of-events",
@@ -35,7 +43,7 @@ object SampleEventDefFactory extends EventDefFactory {
         ),
         FieldDef(
           "uuid", "randomly generated UUID strings with cardinality 50%",
-          Random(50),
+          Random(uuidCardinalityRatio),
           new UuidValueDef[Int]
         ),
         FieldDef(
@@ -44,8 +52,8 @@ object SampleEventDefFactory extends EventDefFactory {
           new IdentityValueDef[String]
         ),
         FieldDef(
-          "section", "normally distributed Doubles sampled from 10 000 distinct values",
-          DistributedDouble(10000, new NormalDistribution(0D, 0.2)),
+          "section", s"normally distributed Doubles sampled from $sectionDataPointsCount distinct values",
+          DistributedDouble(sectionDataPointsCount, new NormalDistribution(0D, 0.2)),
           new IdentityValueDef[Double]
         ),
         FieldDef(
@@ -54,29 +62,29 @@ object SampleEventDefFactory extends EventDefFactory {
           new IdentityValueDef[String]
         ),
         FieldDef(
-          "price", "randomly distributed Doubles sampled from 100 distinct values each between 1 and 1000",
-          DistributedDouble(100, new UniformRealDistribution(1, 1000)),
+          "price", s"randomly distributed Doubles sampled from $priceDataPointsCount distinct values each between 1 and 1000",
+          DistributedDouble(priceDataPointsCount, new UniformRealDistribution(1, 1000)),
           new RoundingValueDef(2)
         ),
         FieldDef(
           "multi_shared",
-          """
-             |3 segments/groups/clients each with random count of dimensions <1 - 6> which are
-             |randomly shared among segments <multi_shared_1 - multi_shared_6>, sampled from 100 distinct values being Normally distributed.
+          s"""
+             |$dynamicMaxSegmentSize segments/groups/clients each with random count of dimensions <1 - $dynamicMaxFieldCount> which are
+             |randomly shared among segments <multi_shared_1 - multi_shared_$dynamicMaxFieldCount>, sampled from $dynamicDataPointsCount distinct values being Normally distributed.
           """.stripMargin,
-          DistributedDouble(100, new NormalDistribution(0D, 0.2)),
+          DistributedDouble(dynamicDataPointsCount, new NormalDistribution(0D, 0.2)),
           new IdentityValueDef[Double],
-          SharedNamesQuantity(3, 6)
+          SharedNamesQuantity(dynamicMaxSegmentSize, dynamicMaxFieldCount)
         ),
         FieldDef(
           "multi_unique",
-          """
-             |3 segments/groups/clients each with random count of dimensions <1 - 6> which are
-             |NOT shared among segments at all (they are entirely distinct), sampled from 100 distinct values being Normally distributed.
+          s"""
+             |$dynamicMaxSegmentSize segments/groups/clients each with random count of dimensions <1 - $dynamicMaxFieldCount> which are
+             |NOT shared among segments at all (they are entirely distinct), sampled from $dynamicDataPointsCount distinct values being Normally distributed.
           """.stripMargin,
-          DistributedDouble(100, new NormalDistribution(0D, 0.2)),
+          DistributedDouble(dynamicDataPointsCount, new NormalDistribution(0D, 0.2)),
           new IdentityValueDef[Double],
-          DistinctNamesQuantity(3, 6)
+          DistinctNamesQuantity(dynamicMaxSegmentSize, dynamicMaxFieldCount)
         )
       )
 
