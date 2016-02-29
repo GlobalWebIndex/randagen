@@ -1,7 +1,7 @@
 package gwi.randagen
 
 import java.time.temporal.ChronoUnit
-import java.time.{LocalDateTime, Month}
+import java.time.{ZoneOffset, LocalDateTime, Month}
 
 import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDistribution}
 
@@ -101,5 +101,5 @@ object SampleEventDefFactory {
     list.zip(list.foldLeft(List(0.2)) { case (acc, _) => (acc.head * 1.1) :: acc }).toArray
   }
 
-  val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0)
+  val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0).atZone(ZoneOffset.UTC).toLocalDateTime
 }
