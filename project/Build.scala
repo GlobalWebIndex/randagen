@@ -8,7 +8,8 @@ import sbtdocker.DockerPlugin
 object Build extends sbt.Build {
 
   val loggingDeps = Seq(
-    "ch.qos.logback" % "logback-classic" % "1.1.3"
+    "ch.qos.logback" % "logback-classic" % "1.1.6",
+    "org.slf4j" % "slf4j-api" % "1.7.18"
   )
 
   val testingDeps = Seq(
