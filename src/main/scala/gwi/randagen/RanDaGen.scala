@@ -10,14 +10,14 @@ import scala.util.{Failure, Success}
 object RanDaGen extends App {
   private val logger = LoggerFactory.getLogger(getClass.getName)
 
-  private def runMain(format: String, batchByteSize: Int, totalEventCount: Int, parallelism: Int, storage: String, path: String) = {
+  private def runMain(format: String, batchByteSize: Double, totalEventCount: Int, parallelism: Int, storage: String, compress: Boolean, path: String) = {
     val f =
       run(
-        batchByteSize,
+        batchByteSize.toInt,
         totalEventCount,
         Parallelism(parallelism),
         EventGenerator(format),
-        EventConsumer(storage, path),
+        EventConsumer(storage, path, compress),
         SampleEventDefFactory()
       )
     println(Await.result(f, 4.hours))
@@ -48,19 +48,19 @@ object RanDaGen extends App {
   }
 
   args.toList match {
-    case format :: batchSize_MB :: totalEventCount :: parallelism :: storage :: path :: Nil =>
-      runMain(format, batchSize_MB.toInt * 1024 * 1000, totalEventCount.toInt, parallelism.toInt, storage, path)
+    case format :: batchSize_MB :: totalEventCount :: parallelism :: storage :: compress :: path :: Nil =>
+      runMain(format, batchSize_MB.toDouble * 1000 * 1024, totalEventCount.toInt, parallelism.toInt, storage, compress.toBoolean, path)
     case x =>
       println(
         s"""
           | Wrong arguments : ${x.mkString(" ")}
           | Please see :
           |
-          |format  batchByteSize_MB  totalEventCount  parallelism  storage  path
+          |format  batchByteSize_MB  totalEventCount  parallelism  storage  compress  path
           |---------------------------------------------------------------------------------------------
-          |tsv          50              10000000         2          s3   bucket@foo/bar
-          |csv          50              10000000         4          fs   /tmp/data
-          |json         50              10000000         4          fs   /tmp/data
+          |tsv          50              10000000         2          s3       true     bucket@foo/bar
+          |csv          50              10000000         4          fs       false    /tmp/data
+          |json         50              10000000         4          fs       false    /tmp/data
         """.stripMargin)
   }
 

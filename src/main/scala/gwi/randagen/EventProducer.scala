@@ -33,7 +33,7 @@ class EventProducer(eventDefFactory: EventDefFactory, eventGenerator: EventGener
             it.foldLeft(Option.empty[String], 0, new ArrayBuffer[Array[Byte]](32768)) { case ((lastPathOpt, byteSize, acc), (idx, shuffledIdx)) =>
               def pullEvent = eventGenerator.generate(eventDef, Progress(shuffledIdx, idx, totalEventCount))
               def pushEvents(path: Option[String], loadSize: Int, load: ArrayBuffer[Array[Byte]]) =
-                eventConsumer.push(ConsumerRequest(path, idx+1, eventGenerator.format.extension, loadSize, load.toArray))
+                eventConsumer.push(ConsumerRequest(path, idx+1, eventGenerator.format.extension, ArrayUtils.flattenArray(load.toArray, Option(loadSize))))
 
               val Event(field, pathOpt) = pullEvent
               val bytes = field.getBytes

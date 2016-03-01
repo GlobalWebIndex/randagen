@@ -18,7 +18,7 @@ class RanDaGenTestSuite extends BaseSuite {
     val timestampPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS"
     val fieldFormatter = new SimpleDateFormat(timestampPattern)
     val directoryFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH")
-    val f = RanDaGen.run(byteSize, 10000, Parallelism(4), DsvEventGenerator(TsvFormat), FsEventConsumer(tmpDir.toPath), SampleEventDefFactory())
+    val f = RanDaGen.run(byteSize, 10000, Parallelism(4), DsvEventGenerator(TsvFormat), FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       targetDir.listFiles().foreach { d =>
         val timestamps =
@@ -42,7 +42,7 @@ class RanDaGenTestSuite extends BaseSuite {
   "test random distribution" in {
     import upickle.default._
     val tmpDir = getTmpDir
-    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath), SampleEventDefFactory())
+    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       val uuidSet =
         listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
@@ -56,7 +56,7 @@ class RanDaGenTestSuite extends BaseSuite {
   "test generated data integrity" in {
     import upickle.default._
     val tmpDir = getTmpDir
-    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath), SampleEventDefFactory())
+    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
         read[Map[String, Any]](line)

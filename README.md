@@ -38,11 +38,11 @@ docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e
 
 Just use real arguments instead of `ARGS` ^, examples :
 ```
-format  batchByteSize_MB  totalEventCount  parallelism  storage  path
+format  batchByteSize_MB  totalEventCount  parallelism  storage  compress  path
 ---------------------------------------------------------------------------------------------
-tsv          50              10000000         2          s3   bucket@foo/bar
-csv          50              10000000         4          fs   /tmp/data
-json         50              10000000         4          fs   /tmp/data
+tsv          50              10000000         2          s3       true     bucket@foo/bar
+csv          50              10000000         4          fs       false    /tmp/data
+json         50              10000000         4          fs       false    /tmp/data
 ```
 
 Note ^^^ that 
