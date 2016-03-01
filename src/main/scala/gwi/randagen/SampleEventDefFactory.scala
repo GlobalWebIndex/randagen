@@ -8,7 +8,7 @@ import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDis
 case class SampleEventDefFactory(
           tickUnit: ChronoUnit = ChronoUnit.SECONDS,
           uuidCardinalityRatio: Int = 50,
-          sectionDataPointsCount: Int = 10000,
+          sectionDataPointsCount: Int = 100,
           priceDataPointsCount: Int = 100,
           dynamicMaxSegmentSize: Int = 3,
           dynamicMaxFieldCount: Int = 6,
@@ -49,7 +49,7 @@ case class SampleEventDefFactory(
         ),
         FieldDef(
           purchaseFieldName, "4 purchase types with weighted probability distribution",
-          WeightedEnumeration[String](purchase),
+          WeightedEnumeration[String](weightedPurchasePMF),
           new IdentityValueDef[String]
         ),
         FieldDef(
@@ -58,7 +58,7 @@ case class SampleEventDefFactory(
           new RoundingValueDef(2)
         ),
         FieldDef(
-          "multi_shared",
+          "ms", // multi-fields shared
           s"""
              |$dynamicMaxSegmentSize segments/groups/clients each with random count of dimensions <1 - $dynamicMaxFieldCount> which are
              |randomly shared among segments <multi_shared_1 - multi_shared_$dynamicMaxFieldCount>, sampled from $dynamicDataPointsCount distinct values being Normally distributed.
@@ -68,7 +68,7 @@ case class SampleEventDefFactory(
           SharedNamesQuantity(dynamicMaxSegmentSize, dynamicMaxFieldCount)
         ),
         FieldDef(
-          "multi_unique",
+          "mu", // multi-fields distinct
           s"""
              |$dynamicMaxSegmentSize segments/groups/clients each with random count of dimensions <1 - $dynamicMaxFieldCount> which are
              |NOT shared among segments at all (they are entirely distinct), sampled from $dynamicDataPointsCount distinct values being Normally distributed.
@@ -92,7 +92,8 @@ object SampleEventDefFactory {
   val purchaseFieldName = "purchase"
   val priceFieldName = "price"
 
-  def purchase = Array("micro" -> 0.1,"small" -> 0.2,"medium" -> 0.4,"large" -> 0.3)
+  def purchases = Array("s","m","l","xl")
+  def weightedPurchasePMF = purchases.zip(Seq(0.1,0.2,0.4,0.3))
   def countries = {
     val list = List(
       "bra","nzl","bel","bgr","idn","egy","tur","nor","pol","jpn","esp","irl","cze","dnk","che","nld",
