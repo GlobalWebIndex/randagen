@@ -40,13 +40,12 @@ class RanDaGenTestSuite extends BaseSuite {
   }
 
   "test random distribution" in {
-    import upickle.default._
     val tmpDir = getTmpDir
     val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       val uuidSet =
         listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
-          val record = read[Map[String, Any]](line)
+          val record = ObjMapper.readValue[Map[String, Any]](line)
           record("uuid")
         }.toSet
       assertResult(15001)(uuidSet.size)
@@ -54,12 +53,11 @@ class RanDaGenTestSuite extends BaseSuite {
   }
 
   "test generated data integrity" in {
-    import upickle.default._
     val tmpDir = getTmpDir
     val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
-        read[Map[String, Any]](line)
+        ObjMapper.readValue[Map[String, Any]](line)
       }
     }
 

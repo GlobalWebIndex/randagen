@@ -13,7 +13,8 @@ object Build extends sbt.Build {
   )
 
   val testingDeps = Seq(
-    "org.scalatest" %% "scalatest" % "3.0.0-M15" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.0-M15" % "test",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.3" % "test"
   )
 
   val awsDeps = Seq(
@@ -99,6 +100,7 @@ object Build extends sbt.Build {
     .settings(
       organization := "net.globalwebindex",
       name := "randagen",
+      crossScalaVersions := Seq("2.11.7", "2.10.6"),
       scalaVersion := "2.11.7",
       version := "0.9-SNAPSHOT",
       scalacOptions ++= Seq(
@@ -110,8 +112,7 @@ object Build extends sbt.Build {
       autoCompilerPlugins := true,
       cancelable in Global := true,
       libraryDependencies ++= awsDeps ++ loggingDeps ++ testingDeps ++ Seq(
-        "org.apache.commons" % "commons-math3" % "3.6",
-        "com.lihaoyi" %% "upickle" % "0.3.8"
+        "org.apache.commons" % "commons-math3" % "3.6"
       )
     ).settings(testSettings ++ publishSettings)
     .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.RanDaGen")):_*)

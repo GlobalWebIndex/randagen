@@ -67,7 +67,7 @@ object ArrayUtils {
     private[randagen] def arrayIterator(fromTo: (Int,Int)): Iterator[(Int, Int)] = {
       val (fromIdx, toIdx) = fromTo
       require(toIdx<underlying.length && fromIdx<=toIdx, s"from $fromIdx to $toIdx is not within ${underlying.length} range !!!")
-      new AbstractIterator[(Int, Int)] {
+      new Iterator[(Int, Int)] {
         private var idx = fromIdx
         def hasNext: Boolean = idx <= toIdx
         def next() = {
