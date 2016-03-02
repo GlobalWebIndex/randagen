@@ -7,6 +7,8 @@ import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDis
 
 case class SampleEventDefFactory(
           tickUnit: ChronoUnit = ChronoUnit.SECONDS,
+          timePathPattern: String = SampleEventDefFactory.TimePathPattern,
+          timeStampPattern: String = SampleEventDefFactory.TimeStampPattern,
           uuidCardinalityRatio: Int = 50,
           sectionDataPointsCount: Int = 100,
           priceDataPointsCount: Int = 100,
@@ -18,14 +20,14 @@ case class SampleEventDefFactory(
   def apply(implicit p: Parallelism): EventDef = {
     import SampleEventDefFactory._
 
-    val pathDef = TimePathDef(Clock("yyyy'/'MM'/'dd'/'HH", tickUnit, start))
+    val pathDef = TimePathDef(Clock(timePathPattern, tickUnit, start))
 
     val fieldDefs =
       List(
         FieldDef(
           timeFieldName, s"timestamp incremented by one $tickUnit in each event",
           Linear,
-          TimeValueDef(Clock("yyyy-MM-dd'T'HH:mm:ss.SSS", tickUnit, start))
+          TimeValueDef(Clock(timeStampPattern, tickUnit, start))
         ),
         FieldDef(
           idxFieldName, "growing number from 0 until total-number-of-events",
@@ -84,6 +86,9 @@ case class SampleEventDefFactory(
 }
 
 object SampleEventDefFactory {
+  val TimeStampPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+  val TimePathPattern = "yyyy'/'MM'/'dd'/'HH"
+
   val timeFieldName = "time"
   val idxFieldName = "idx"
   val uuidFieldName = "uuid"

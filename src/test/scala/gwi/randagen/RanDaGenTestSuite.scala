@@ -1,9 +1,11 @@
 package gwi.randagen
 
 import java.text.SimpleDateFormat
+
 import org.scalatest.time.{Millis, Seconds, Span}
+
 import scala.io.Source
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 case class SampleEvent(time: String, uuid: String, country: String, section: Double, purchase: String, kv_shared: String, kv_unique: String, price: Double)
 
@@ -15,8 +17,7 @@ class RanDaGenTestSuite extends BaseSuite {
   private def testThatEventsInFilesOnTimeBasedPathHaveCorrectTimestamps(byteSize: Int) = {
     val tmpDir = getTmpDir
     def targetDir = listAllFiles(tmpDir).head.getParentFile.getParentFile
-    val timestampPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-    val fieldFormatter = new SimpleDateFormat(timestampPattern)
+    val fieldFormatter = new SimpleDateFormat(SampleEventDefFactory.TimeStampPattern)
     val directoryFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH")
     val f = RanDaGen.run(byteSize, 10000, Parallelism(4), DsvEventGenerator(TsvFormat), FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
@@ -40,8 +41,9 @@ class RanDaGenTestSuite extends BaseSuite {
   }
 
   "test random distribution" in {
+    val totalEventCount = 30000
     val tmpDir = getTmpDir
-    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
+    val f = RanDaGen.run(1000*1000, totalEventCount, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
       val uuidSet =
         listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
@@ -53,14 +55,12 @@ class RanDaGenTestSuite extends BaseSuite {
   }
 
   "test generated data integrity" in {
+    val totalEventCount = 30000
     val tmpDir = getTmpDir
-    val f = RanDaGen.run(1000*1000, 30000, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
+    val f = RanDaGen.run(1000*1000, totalEventCount, Parallelism(4), JsonEventGenerator, FsEventConsumer(tmpDir.toPath, compress = false), SampleEventDefFactory())
     whenReady(f) { r =>
-      listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map { line =>
-        ObjMapper.readValue[Map[String, Any]](line)
-      }
+      listAllFiles(tmpDir).map(Source.fromFile).flatMap(_.getLines()).map(ObjMapper.readValue[Map[String, Any]])
     }
-
   }
 
 }
