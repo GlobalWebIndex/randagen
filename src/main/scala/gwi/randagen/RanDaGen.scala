@@ -24,12 +24,6 @@ object RanDaGen extends App {
   }
 
   def run(batchByteSize: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDefFactory): Future[Report] = {
-    def startConsumer = {
-      val consumerThread = new Thread(consumer)
-      consumerThread.start()
-      consumerThread
-    }
-
     def startProducer =
       new EventProducer(eventDef, generator, consumer)(p)
         .generate(batchByteSize, totalEventCount)
@@ -41,9 +35,9 @@ object RanDaGen extends App {
             consumer.kill()
         }
 
-    val consumerThread = startConsumer
+    consumer.start()
     val producerFuture = startProducer
-    consumerThread.join()
+    consumer.join()
     producerFuture.map(Report(totalEventCount, _, consumer.getResponses))
   }
 

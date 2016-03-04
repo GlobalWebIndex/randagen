@@ -24,7 +24,7 @@ case class ConsumerResponse(id: String, name: String, byteSize: Int, took: Long)
   * A bounded BlockingQueue based implementation of a Consumer being able to consume messages by
   * concurrently running publishers. It blocks publisher if it is falling behind (queue gets full)
   */
-sealed trait EventConsumer extends Runnable {
+sealed trait EventConsumer extends Thread {
   protected val logger = LoggerFactory.getLogger(getClass)
   private val responses = List.newBuilder[ConsumerResponse]
   private val queue = new LinkedBlockingQueue[Request](3)
@@ -47,7 +47,7 @@ sealed trait EventConsumer extends Runnable {
     }
   }
 
-  def run() =
+  override def run() =
     try {
       var shutdown = false
       while (!shutdown)
