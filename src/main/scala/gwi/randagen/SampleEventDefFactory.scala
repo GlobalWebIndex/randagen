@@ -1,12 +1,13 @@
 package gwi.randagen
 
 import java.time.temporal.ChronoUnit
-import java.time.{ZoneOffset, LocalDateTime, Month}
+import java.time.{Instant, LocalDateTime, ZoneOffset}
 
 import org.apache.commons.math3.distribution.{NormalDistribution, UniformRealDistribution}
 
 case class SampleEventDefFactory(
           tickUnit: ChronoUnit = ChronoUnit.SECONDS,
+          start: Long = LocalDateTime.of(2015, 1, 1, 0, 0, 0).atZone(ZoneOffset.UTC).toLocalDateTime.toInstant(ZoneOffset.UTC).toEpochMilli,
           timePathPattern: String = SampleEventDefFactory.TimePathPattern,
           timeStampPattern: String = SampleEventDefFactory.TimeStampPattern,
           uuidCardinalityRatio: Int = 50,
@@ -20,14 +21,16 @@ case class SampleEventDefFactory(
   def apply(implicit p: Parallelism): EventDef = {
     import SampleEventDefFactory._
 
-    val pathDef = TimePathDef(Clock(timePathPattern, tickUnit, start))
+    val dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(start), ZoneOffset.UTC)
+
+    val pathDef = TimePathDef(Clock(timePathPattern, tickUnit, dateTime))
 
     val fieldDefs =
       List(
         FieldDef(
           timeFieldName, s"timestamp incremented by one $tickUnit in each event",
           Linear,
-          TimeValueDef(Clock(timeStampPattern, tickUnit, start))
+          TimeValueDef(Clock(timeStampPattern, tickUnit, dateTime))
         ),
         FieldDef(
           idxFieldName, "growing number from 0 until total-number-of-events",
@@ -106,6 +109,4 @@ object SampleEventDefFactory {
     )
     list.zip(list.foldLeft(List(0.2)) { case (acc, _) => (acc.head * 1.1) :: acc }).toArray
   }
-
-  val start = LocalDateTime.of(2015,Month.JANUARY, 1, 0, 0, 0).atZone(ZoneOffset.UTC).toLocalDateTime
 }

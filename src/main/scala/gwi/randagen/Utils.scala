@@ -6,7 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.util.SplittableRandom
 
 import scala.collection.mutable.ArrayBuffer
-import scala.collection.{AbstractIterator, Iterator}
+import scala.collection.Iterator
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
