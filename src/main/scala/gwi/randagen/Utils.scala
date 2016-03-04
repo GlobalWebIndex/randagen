@@ -42,6 +42,21 @@ object ArrayUtils {
     arr
   }
 
+  def partitionIntervals(length: Int, partitionCount: Int): IndexedSeq[(Int, Int)] = {
+    require(length/partitionCount >= 2, "Array of size x can be partitioned by max x/2, partitioning becomes meaningless otherwise !!!")
+    val partsSizes = ArrayBuffer.fill(Math.min(length, partitionCount))(length / partitionCount)
+    (0 until length % partitionCount).foldLeft(partsSizes) { case (acc, idx) =>
+      acc.update(idx, acc(idx) + 1)
+      acc
+    }.foldLeft(ArrayBuffer.empty[(Int,Int)]) {
+      case (acc, e) if acc.isEmpty =>
+        acc += 0 -> (e-1)
+      case (acc, e) =>
+        val last = acc.last._2
+        acc += (last+1) -> (last+e)
+    }.toIndexedSeq
+  }
+
   /**
     * @param xs to flatten
     * @param byteSize optional total size of the future array - for performance reasons, summing up 100 000 integers can be expensive
@@ -57,9 +72,11 @@ object ArrayUtils {
   /**
     * This is basically a rewrite of Scala's ParArray, in order to :
     * 1) improve resource management
+    *   Memory wise :
     *     Array.range(0, 300 000 000)             // 2GB on Heap needed
     *     Array.range(0, 70 000 000).toParArray   // max you can get with 2GB on Heap
-    *
+    *   Performance wise :
+    *     To shuffle Generic Array of length 1 billion takes 40 seconds, but only 20 seconds using Int Array
     * 2) perform initialization logic before asynchronous execution, because Commons Math is mostly not thread safe
     */
   implicit class IntArrayPimp(underlying: Array[Int]) {
@@ -76,22 +93,6 @@ object ArrayUtils {
           result
         }
       }
-    }
-
-    private[randagen] def arrayPartitions(partitionCount: Int): List[(Int, Int)] = {
-      val arrLength = underlying.length
-      require(arrLength/partitionCount >= 2, "Array of size x can be partitioned by max x/2, partitioning becomes meaningless otherwise !!!")
-      val partsSizes = ArrayBuffer.fill(Math.min(arrLength, partitionCount))(arrLength / partitionCount)
-      (0 until arrLength % partitionCount).foldLeft(partsSizes) { case (acc, idx) =>
-        acc.update(idx, acc(idx) + 1)
-        acc
-      }.foldLeft(ArrayBuffer.empty[(Int,Int)]) {
-        case (acc, e) if acc.isEmpty =>
-          acc += 0 -> (e-1)
-        case (acc, e) =>
-          val last = acc.last._2
-          acc += (last+1) -> (last+e)
-      }.toList
     }
 
     /**
@@ -122,7 +123,7 @@ object ArrayUtils {
 
     import scala.concurrent.ExecutionContext.Implicits.global
     def mapAsync[R](parallelism: Int)(fn: Iterator[(Int,Int)] => R): Future[List[R]] =
-      Future.sequence(arrayPartitions(parallelism).map(arrayIterator).map(it => Future(fn(it))))
+      Future.sequence(partitionIntervals(underlying.length, parallelism).toList.map(arrayIterator).map(it => Future(fn(it))))
 
   }
 }

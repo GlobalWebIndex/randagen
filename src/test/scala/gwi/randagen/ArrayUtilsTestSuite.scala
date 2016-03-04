@@ -26,13 +26,14 @@ class ArrayUtilsTestSuite extends FreeSpec with Matchers with ScalaFutures with 
   }
 
   "array partitions should work" in {
-    assertResult(List((0,11))) ((0 until 12).toArray.arrayPartitions(1))
-    assertResult(List((0,5), (6,11))) ((0 until 12).toArray.arrayPartitions(2))
-    assertResult(List((0,3), (4,7), (8,11))) ((0 until 12).toArray.arrayPartitions(3))
-    assertResult(List((0,2), (3,5), (6,8), (9,11))) ((0 until 12).toArray.arrayPartitions(4))
-    assertResult(List((0,2), (3,5), (6,7), (8,9), (10,11))) ((0 until 12).toArray.arrayPartitions(5))
-    assertResult(List((0,1), (2,3), (4,5), (6,7), (8,9), (10,11))) ((0 until 12).toArray.arrayPartitions(6))
-    assertThrows[IllegalArgumentException]((0 until 12).toArray.arrayPartitions(7))
+    import ArrayUtils._
+    assertResult(List((0,11))) (partitionIntervals(12, 1))
+    assertResult(List((0,5), (6,11))) (partitionIntervals(12, 2))
+    assertResult(List((0,3), (4,7), (8,11))) (partitionIntervals(12, 3))
+    assertResult(List((0,2), (3,5), (6,8), (9,11))) (partitionIntervals(12, 4))
+    assertResult(List((0,2), (3,5), (6,7), (8,9), (10,11))) (partitionIntervals(12, 5))
+    assertResult(List((0,1), (2,3), (4,5), (6,7), (8,9), (10,11))) (partitionIntervals(12, 6))
+    assertThrows[IllegalArgumentException](partitionIntervals(12, 7))
   }
 
   "array iterators should work" in {
