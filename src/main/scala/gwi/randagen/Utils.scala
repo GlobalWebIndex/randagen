@@ -43,7 +43,7 @@ object ArrayUtils {
   }
 
   def partitionIntervals(length: Int, partitionCount: Int): IndexedSeq[(Int, Int)] = {
-    require(length/partitionCount >= 2, "Array of size x can be partitioned by max x/2, partitioning becomes meaningless otherwise !!!")
+    require(length/partitionCount >= 2, s"Partitioning makes sense only if length/partitionCount is greater or equal to 2 ... $length/$partitionCount is not !!!")
     val partsSizes = ArrayBuffer.fill(Math.min(length, partitionCount))(length / partitionCount)
     (0 until length % partitionCount).foldLeft(partsSizes) { case (acc, idx) =>
       acc.update(idx, acc(idx) + 1)
