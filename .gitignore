@@ -21,4 +21,4 @@ project/boot/
 .cache
 
 ### app JAR ###
-deploy/bin/
+app/deploy/bin/

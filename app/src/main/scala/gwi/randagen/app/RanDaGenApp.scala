@@ -1,18 +1,15 @@
-package gwi.randagen
+package gwi.randagen.app
 
-import org.slf4j.LoggerFactory
+import gwi.randagen._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success}
 
-object RanDaGen extends App {
-  private val logger = LoggerFactory.getLogger(getClass.getName)
+object RanDaGenApp extends App {
 
   private def runMain(format: String, batchByteSize: Double, totalEventCount: Int, parallelism: Int, storage: String, compress: Boolean, path: String) = {
-    val f =
-      run(
+    val future =
+      RanDaGen.run(
         batchByteSize.toInt,
         totalEventCount,
         Parallelism(parallelism),
@@ -20,25 +17,7 @@ object RanDaGen extends App {
         EventConsumer(storage, path, compress),
         SampleEventDefFactory()
       )
-    println(Await.result(f, 4.hours))
-  }
-
-  def run(batchByteSize: Int, totalEventCount: Int, p: Parallelism, generator: EventGenerator, consumer: EventConsumer, eventDef: EventDefFactory): Future[Report] = {
-    def startProducer =
-      new EventProducer(eventDef, generator, consumer)(p)
-        .generate(batchByteSize, totalEventCount)
-        .andThen {
-          case Failure(ex) =>
-            logger.error("Data generation failed !!!", ex)
-            consumer.kill()
-          case Success(times) =>
-            consumer.kill()
-        }
-
-    consumer.start()
-    val producerFuture = startProducer
-    consumer.join()
-    producerFuture.map(Report(totalEventCount, _, consumer.getResponses))
+    println(Await.result(future, 4.hours))
   }
 
   args.toList match {

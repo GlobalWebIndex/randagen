@@ -60,4 +60,4 @@ Or use it as a dependency / library :
 RanDaGen.run(50, 10000000, Parallelism(4), JsonEventGenerator, FsEventConsumer(targetPath), eventDefFactory)
 ```
 
-`eventDefFactory` describes the whole data set, see the [Sample Event Definition!](src/main/scala/gwi/randagen/SampleEventDefFactory.scala)
+`eventDefFactory` describes the whole data set, see the [Sample Event Definition!](core/src/main/scala/gwi/randagen/SampleEventDefFactory.scala)

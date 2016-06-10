@@ -7,14 +7,20 @@ import sbtdocker.DockerPlugin
 
 object Build extends sbt.Build {
 
-  val loggingDeps = Seq(
-    "ch.qos.logback" % "logback-classic" % "1.1.6",
+  val mathDeps = Seq(
+    "org.apache.commons" % "commons-math3" % "3.6"
+  )
+
+  val loggingImplDeps = Seq(
+    "ch.qos.logback" % "logback-classic" % "1.1.6"
+  )
+  val loggingApiDeps = Seq(
     "org.slf4j" % "slf4j-api" % "1.7.18"
   )
 
   val testingDeps = Seq(
     "org.scalatest" %% "scalatest" % "3.0.0-M15" % "test",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.3" % "test"
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.7.2" % "test"
   )
 
   val awsDeps = Seq(
@@ -95,26 +101,38 @@ object Build extends sbt.Build {
     )
   }
 
-  lazy val root = (project in file("."))
-    .enablePlugins(DockerPlugin)
-    .settings(
-      organization := "net.globalwebindex",
-      name := "randagen",
-      crossScalaVersions := Seq("2.11.7", "2.10.6"),
-      scalaVersion := "2.11.7",
-      version := "0.9-SNAPSHOT",
-      scalacOptions ++= Seq(
-        "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
-        "-Xlint", "-Xfuture",
-        "-Yinline-warnings", "-Ywarn-adapted-args", "-Ywarn-inaccessible",
-        "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Yno-adapted-args"
-      ),
-      autoCompilerPlugins := true,
-      cancelable in Global := true,
-      libraryDependencies ++= awsDeps ++ loggingDeps ++ testingDeps ++ Seq(
-        "org.apache.commons" % "commons-math3" % "3.6"
-      )
-    ).settings(testSettings ++ publishSettings)
-    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.RanDaGen")):_*)
+  val sharedSettings = Seq(
+    organization := "net.globalwebindex",
+    crossScalaVersions := Seq("2.11.7", "2.10.6"),
+    scalaVersion := "2.11.7",
+    version := "0.9-SNAPSHOT",
+    scalacOptions ++= Seq(
+      "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
+      "-Xlint", "-Xfuture",
+      "-Yinline-warnings", "-Ywarn-adapted-args", "-Ywarn-inaccessible",
+      "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Yno-adapted-args"
+    ),
+    autoCompilerPlugins := true,
+    cancelable in Global := true,
+    resolvers ++= Seq(
+      "S3 Snapshots" at "s3://maven.globalwebindex.net.s3-website-eu-west-1.amazonaws.com/snapshots",
+      Resolver.sonatypeRepo("snapshots"),
+      Resolver.typesafeRepo("releases"),
+      Resolver.mavenLocal
+    )
+  ) ++ testSettings
 
+  lazy val core = (project in file("core"))
+    .settings(name := "randagen")
+    .settings(sharedSettings)
+    .settings(libraryDependencies ++= awsDeps ++ mathDeps ++ loggingApiDeps ++ loggingImplDeps.map(_ % "provided") ++ testingDeps)
+    .settings(publishSettings)
+
+  lazy val app = (project in file("app"))
+    .enablePlugins(DockerPlugin)
+    .settings(name := "randagen-app")
+    .settings(sharedSettings)
+    .dependsOn(core % "compile->compile;test->test")
+    .settings(libraryDependencies ++= loggingImplDeps)
+    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.app.RanDaGenApp")):_*)
 }
