@@ -134,5 +134,5 @@ object Build extends sbt.Build {
     .settings(sharedSettings)
     .dependsOn(core % "compile->compile;test->test")
     .settings(libraryDependencies ++= loggingImplDeps)
-    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.app.RanDaGenApp")):_*)
+    .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.app.RanDaGenApp")))
 }
