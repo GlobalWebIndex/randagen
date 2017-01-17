@@ -12,31 +12,31 @@ object Build extends sbt.Build {
   )
 
   val loggingImplDeps = Seq(
-    "ch.qos.logback" % "logback-classic" % "1.1.6"
+    "ch.qos.logback" % "logback-classic" % "1.1.8"
   )
   val loggingApiDeps = Seq(
-    "org.slf4j" % "slf4j-api" % "1.7.18"
+    "org.slf4j" % "slf4j-api" % "1.7.22"
   )
 
   val testingDeps = Seq(
-    "org.scalatest" %% "scalatest" % "3.0.0-M15" % "test",
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.7.2" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test",
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.4" % "test"
+  )
+
+  val clist = Seq(
+    "org.backuity.clist"          %%  "clist-core"                  % "3.2.2",
+    "org.backuity.clist"          %%  "clist-macros"                % "3.2.2"       % "provided"
   )
 
   val awsDeps = Seq(
-    "com.amazonaws" % "aws-java-sdk-s3" % "1.10.26"
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.68"
   )
 
   val publishSettings = Seq(
     publishMavenStyle := true,
     publishArtifact in Test := false,
     pomIncludeRepository := { _ => false },
-    publishTo := {
-      if (organization.value == "com.viagraphs")
-        Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
-      else
-        Some("S3 Snapshots" at "s3://maven.globalwebindex.net.s3-website-eu-west-1.amazonaws.com/snapshots")
-    },
+    publishTo := Some("S3 Snapshots" at "s3://public.maven.globalwebindex.net.s3-website-eu-west-1.amazonaws.com/snapshots"),
     pomExtra :=
       <url>https://github.com/GlobalWebIndex/randagen</url>
         <licenses>
@@ -103,24 +103,26 @@ object Build extends sbt.Build {
 
   val sharedSettings = Seq(
     organization := "net.globalwebindex",
-    crossScalaVersions := Seq("2.11.7", "2.10.6"),
-    scalaVersion := "2.11.7",
-    version := "0.9-SNAPSHOT",
+    crossScalaVersions := Seq("2.11.8", "2.12.1"),
+    scalaVersion := "2.12.1",
+    version := "0.10-SNAPSHOT",
     scalacOptions ++= Seq(
       "-unchecked", "-deprecation", "-feature", "-Xfatal-warnings",
       "-Xlint", "-Xfuture",
-      "-Yinline-warnings", "-Ywarn-adapted-args", "-Ywarn-inaccessible",
+      "-Ywarn-adapted-args", "-Ywarn-inaccessible",
       "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Yno-adapted-args"
     ),
     autoCompilerPlugins := true,
     cancelable in Global := true,
     resolvers ++= Seq(
-      "S3 Snapshots" at "s3://maven.globalwebindex.net.s3-website-eu-west-1.amazonaws.com/snapshots",
       Resolver.sonatypeRepo("snapshots"),
       Resolver.typesafeRepo("releases"),
       Resolver.mavenLocal
     )
   ) ++ testSettings
+
+  lazy val randagen = (project in file("."))
+    .settings(sharedSettings)
 
   lazy val core = (project in file("core"))
     .settings(name := "randagen")
@@ -133,6 +135,6 @@ object Build extends sbt.Build {
     .settings(name := "randagen-app")
     .settings(sharedSettings)
     .dependsOn(core % "compile->compile;test->test")
-    .settings(libraryDependencies ++= loggingImplDeps)
+    .settings(libraryDependencies ++= loggingImplDeps ++ clist)
     .settings(deploySettings("gwiq", "randagen", Some("gwi.randagen.app.RanDaGenApp")))
 }

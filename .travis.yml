@@ -1,0 +1,24 @@
+sudo: false
+os:
+  - linux
+  - osx
+language: scala
+scala:
+    - 2.11.8
+    - 2.12.1
+jdk:
+    - oraclejdk8
+cache:
+  directories:
+    - $HOME/.m2/repository
+    - $HOME/.sbt
+    - $HOME/.ivy2
+branches:
+  only:
+    - master
+notifications:
+  email:
+    recipients:
+      - liska.jakub@gmail.com
+script:
+- sbt ++$TRAVIS_SCALA_VERSION clean test

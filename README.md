@@ -1,5 +1,7 @@
 **High performance generator of data**
 
+[![Build Status](https://travis-ci.org/GlobalWebIndex/randagen.svg?branch=master)](https://travis-ci.org/GlobalWebIndex/randagen)
+
 It is able to generate data :
  - randomly distributed
     - On SSD it can persist a billion events to FileSystem with 60GB of data in 20 minutes using just 6GB of Heap 
@@ -20,7 +22,7 @@ It is able to generate data :
  
 ## How to
 
-Data can be generated to s3, if you do so, you should have :
+Data can be generated to s3, if you do so, you should have these variables exported or stored in file :
 ```
 $ cat ~/.aws/aws.env 
 AWS_ACCESS_KEY_ID=???
@@ -28,7 +30,7 @@ AWS_SECRET_ACCESS_KEY=???
 AWS_DEFAULT_REGION=???
 ```
 
-Then you're all set, use `gwiq/randagen` docker image : 
+Then you're all set, use `gwiq/randagen` docker image with sample data definition :
  - use `-v` flag to make output data (in case of FS storage) accessible 
  - don't forget to change `-Xmx` appropriately 
 
@@ -36,24 +38,39 @@ Then you're all set, use `gwiq/randagen` docker image :
 docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e JAVA_TOOL_OPTIONS=-Xmx4g gwiq/randagen ARGS
 ```
 
-Just use real arguments instead of `ARGS` ^, examples :
+Just use real arguments instead of `ARGS` ^, usage :
+Usage
 ```
-format  batchByteSize_MB  totalEventCount  parallelism  storage  compress  path
+ randagen <format> [<batch-flush-megabytes-limit>] <records-count> <parallelism> <storage> <compress> <path>
+```
+Arguments
+```
+   <format>                      : [ tsv | csv | json ]
+   <batch-flush-megabytes-limit> : When to flush in-memory data to disk or network
+   <records-count>               : How many records to generate
+   <parallelism>                 : How many threads should be leveraged for data generation
+   <storage>                     : [ s3 | fs ]
+   <compress>                    : Whether to gzip output or not
+   <path>                        : S3 of FS path: [ bucket@foo/bar  | /tmp/data ]
+```
+Example arguments :
+```
+format  batch-flush-megabytes-limit  records-count  parallelism  storage  compress  path
 ---------------------------------------------------------------------------------------------
-tsv          50              10000000         2          s3       true     bucket@foo/bar
-csv          50              10000000         4          fs       false    /tmp/data
-json         50              10000000         4          fs       false    /tmp/data
+tsv          50                         10000000         2          s3       true     bucket@foo/bar
+csv          50                         10000000         4          fs       false    /tmp/data
+json         50                         10000000         4          fs       false    /tmp/data
 ```
 
 Note ^^^ that 
- - parallelism is decreased to just 2 cores when storing data to `s3` because it is way slower  
- - `batchByteSize` is a batch **maximum** byte size restriction
+ - parallelism is decreased to just 2 cores when storing data to `s3` because it is way slower outside ec2 cloud
+ - `batch-flush-megabytes-limit` is a batch **maximum** byte size restriction
     - data will by stored to max 50MB big files or s3Objects in case of `fs` or `s3` storage 
 
 Or use it as a dependency / library : 
 
 ```
-"net.globalwebindex" %% "randagen" % "0.9-SNAPSHOT"
+"net.globalwebindex" %% "randagen" % "0.10-SNAPSHOT"
 ```
 
 ```

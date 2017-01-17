@@ -30,7 +30,7 @@ trait EventGenerator {
   protected[randagen] def generate(eventDef: EventDef, p: Progress): Event =
     Event(mkString(eventDef.fieldDefs.flatMap(_.generate(p, format))), eventDef.pathDefOpt.map(_.generate(p)))
 }
-case class DsvEventGenerator(val format: DsvFormat) extends EventGenerator {
+case class DsvEventGenerator(format: DsvFormat) extends EventGenerator {
   def mkString(xs: Iterable[String]) = xs.mkString("", format.delimiter, format.eolChar)
 }
 case object JsonEventGenerator extends EventGenerator {

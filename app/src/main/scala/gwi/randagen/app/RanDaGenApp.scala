@@ -1,40 +1,31 @@
 package gwi.randagen.app
 
 import gwi.randagen._
-
+import org.backuity.clist._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-object RanDaGenApp extends App {
+object RanDaGenApp extends CliMain[Unit](name = "randagen") {
 
-  private def runMain(format: String, batchByteSize: Double, totalEventCount: Int, parallelism: Int, storage: String, compress: Boolean, path: String) = {
+  var format = arg[String](description = "[ tsv | csv | json ]")
+  var batchFlushMegabytesLimit = arg[Double](name = "batch-flush-megabytes-limit", description = "When to flush in-memory data to disk or network", required = false, default = 50)
+  var recordsCount = arg[Int](name = "records-count", "How many records to generate")
+  var parallelism = arg[Int](description = "How many threads should be leveraged for data generation")
+  var storage = arg[String](description = "[ s3 | fs ]")
+  var compress = arg[Boolean](description = "Whether to gzip output or not")
+  var path = arg[String](description = "S3 of FS path: [ bucket@foo/bar  | /tmp/data ]")
+
+  def run: Unit = {
     val future =
       RanDaGen.run(
-        batchByteSize.toInt,
-        totalEventCount,
+        (batchFlushMegabytesLimit * 1000 * 1024).toInt,
+        recordsCount,
         Parallelism(parallelism),
         EventGenerator(format),
         EventConsumer(storage, path, compress),
         SampleEventDefFactory()
       )
     println(Await.result(future, 4.hours))
-  }
-
-  args.toList match {
-    case format :: batchSize_MB :: totalEventCount :: parallelism :: storage :: compress :: path :: Nil =>
-      runMain(format, batchSize_MB.toDouble * 1000 * 1024, totalEventCount.toInt, parallelism.toInt, storage, compress.toBoolean, path)
-    case x =>
-      println(
-        s"""
-          | Wrong arguments : ${x.mkString(" ")}
-          | Please see :
-          |
-          |format  batchByteSize_MB  totalEventCount  parallelism  storage  compress  path
-          |---------------------------------------------------------------------------------------------
-          |tsv          50              10000000         2          s3       true     bucket@foo/bar
-          |csv          50              10000000         4          fs       false    /tmp/data
-          |json         50              10000000         4          fs       false    /tmp/data
-        """.stripMargin)
   }
 
 }
