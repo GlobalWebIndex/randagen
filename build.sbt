@@ -3,7 +3,6 @@ import gwi.sbt.CommonPlugin.autoImport._
 
 crossScalaVersions in ThisBuild := Seq("2.11.8", "2.12.1")
 organization in ThisBuild := "net.globalwebindex"
-version in ThisBuild := "0.10-SNAPSHOT"
 
 lazy val randagen = (project in file("."))
   .aggregate(core, app)

@@ -67,12 +67,16 @@ Note ^^^ that
  - `batch-flush-megabytes-limit` is a batch **maximum** byte size restriction
     - data will by stored to max 50MB big files or s3Objects in case of `fs` or `s3` storage 
 
-Or use it as a dependency / library : 
+Or use it as a dependency / project / library :
 
 ```
-"net.globalwebindex" %% "randagen" % "0.10-SNAPSHOT"
+libraryDependencies += "net.globalwebindex" %% "randagen" % "x.y.x"
 ```
-
+or
+```
+dependsOn(ProjectRef(uri("https://github.com/GlobalWebIndex/randagen.git#vx.y.x"), "randagen"))
+```
+or
 ```
 RanDaGen.run(50, 10000000, Parallelism(4), JsonEventGenerator, FsEventConsumer(targetPath), eventDefFactory)
 ```
