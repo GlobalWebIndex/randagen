@@ -74,7 +74,7 @@ libraryDependencies += "net.globalwebindex" %% "randagen" % "x.y.x"
 ```
 or
 ```
-dependsOn(ProjectRef(uri("https://github.com/GlobalWebIndex/randagen.git#vx.y.x"), "randagen"))
+dependsOn(ProjectRef(uri("https://github.com/GlobalWebIndex/randagen.git#vx.y.x"), "randagen-core"))
 ```
 or
 ```
