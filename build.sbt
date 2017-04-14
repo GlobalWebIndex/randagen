@@ -9,7 +9,7 @@ lazy val randagen = (project in file("."))
 lazy val `randagen-core` = (project in file("core"))
   .enablePlugins(CommonPlugin)
   .settings(name := "randagen-core")
-  .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLog4j % "provided") ++ loggingApi ++ testingDeps ++ jackson.map(_ % "test"))
+  .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLog4j % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
   .settings(publishSettings("GlobalWebIndex", "randagen", s3Resolver))
 
 lazy val `randagen-app` = (project in file("app"))
