@@ -30,7 +30,7 @@ class EventProducer(eventDefFactory: EventDefFactory, eventGenerator: EventGener
         val (eventDef, gTook) = profile(eventDefFactory(p))
         val (_, pTook) =
           profile {
-            it.foldLeft(Option.empty[String], 0, new ArrayBuffer[Array[Byte]](32768)) { case ((lastPathOpt, byteSize, acc), (idx, shuffledIdx)) =>
+            it.foldLeft((Option.empty[String], 0, new ArrayBuffer[Array[Byte]](32768))) { case ((lastPathOpt, byteSize, acc), (idx, shuffledIdx)) =>
               def pullEvent = eventGenerator.generate(eventDef, Progress(shuffledIdx, idx, totalEventCount))
               def pushEvents(path: Option[String], loadSize: Int, load: ArrayBuffer[Array[Byte]]) =
                 eventConsumer.push(ConsumerRequest(path, idx+1, eventGenerator.format.extension, ArrayUtils.flattenArray(load.toArray, Option(loadSize))))

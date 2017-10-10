@@ -1,9 +1,11 @@
 
-version in ThisBuild := "0.0.5"
+version in ThisBuild := "0.0.6"
 crossScalaVersions in ThisBuild := Seq("2.12.3", "2.11.8")
 organization in ThisBuild := "net.globalwebindex"
 
 lazy val randagen = (project in file("."))
+  .settings(aggregate in update := false)
+  .settings(publish := { })
   .aggregate(`randagen-core`, `randagen-app`)
 
 lazy val `randagen-core` = (project in file("core"))
@@ -17,5 +19,5 @@ lazy val `randagen-app` = (project in file("app"))
   .settings(name := "randagen-app")
   .settings(libraryDependencies ++= loggingApi ++ Seq(loggingImplLog4j))
   .settings(assemblySettings("randagen", Some("gwi.randagen.app.RanDaGenApp")))
-  .settings(deploySettings("java:8", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
+  .settings(deploySettings("openjdk:8", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
   .dependsOn(`randagen-core` % "compile->compile;test->test")
