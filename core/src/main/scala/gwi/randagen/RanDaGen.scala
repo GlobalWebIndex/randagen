@@ -17,7 +17,8 @@ object RanDaGen {
           case Failure(ex) =>
             logger.error("Data generation failed !!!", ex)
             consumer.kill()
-          case Success(times) =>
+          case Success(_) =>
+            logger.info("Data generation succeeded ...")
             consumer.kill()
         }
 
