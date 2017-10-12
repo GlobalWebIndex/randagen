@@ -15,7 +15,7 @@ lazy val `randagen-core` = (project in file("core"))
 
 lazy val `randagen-app` = (project in file("app"))
   .enablePlugins(CommonPlugin, DockerPlugin)
-  .settings(libraryDependencies ++= loggingApi ++ Seq(loggingImplLog4j))
+  .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLog4j))
   .settings(publish := { })
   .settings(deploy("openjdk:8", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
   .dependsOn(`randagen-core` % "compile->compile;test->test")
