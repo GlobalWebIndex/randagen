@@ -1,5 +1,5 @@
 
-version in ThisBuild := "0.0.7"
+version in ThisBuild := "0.0.8"
 crossScalaVersions in ThisBuild := Seq("2.12.3", "2.11.8")
 organization in ThisBuild := "net.globalwebindex"
 
@@ -17,5 +17,5 @@ lazy val `randagen-app` = (project in file("app"))
   .enablePlugins(CommonPlugin, DockerPlugin)
   .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLog4j))
   .settings(publish := { })
-  .settings(deploy("openjdk:8", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
+  .settings(deploy("openjdk:8", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp", Seq.empty))
   .dependsOn(`randagen-core` % "compile->compile;test->test")
