@@ -1,5 +1,5 @@
 
-version in ThisBuild := "0.1.4"
+version in ThisBuild := "0.1.5"
 crossScalaVersions in ThisBuild := Seq("2.12.4", "2.11.8")
 organization in ThisBuild := "net.globalwebindex"
 
@@ -10,12 +10,12 @@ lazy val randagen = (project in file("."))
 
 lazy val `Randagen-core` = (project in file("core"))
   .enablePlugins(CommonPlugin)
-  .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLog4j % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
+  .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
   .settings(publishSettings("GlobalWebIndex", "randagen", s3Resolver))
 
 lazy val `Randagen-app` = (project in file("app"))
   .enablePlugins(CommonPlugin, DockerPlugin)
-  .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLog4j))
+  .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
   .settings(publish := { })
   .settings(deploy(DeployDef(config("app") extend Compile, "openjdk:9", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp")))
   .dependsOn(`Randagen-core` % "compile->compile;test->test")
