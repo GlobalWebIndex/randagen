@@ -1,7 +1,9 @@
 
-version in ThisBuild := "0.1.5"
-crossScalaVersions in ThisBuild := Seq("2.12.4", "2.11.8")
+version in ThisBuild := "0.1.6"
+crossScalaVersions in ThisBuild := Seq("2.12.6", "2.11.8")
 organization in ThisBuild := "net.globalwebindex"
+
+lazy val javaDockerImage  = "anapsix/alpine-java:8u144b01_jdk_unlimited"
 
 lazy val randagen = (project in file("."))
   .settings(aggregate in update := false)
@@ -17,5 +19,5 @@ lazy val `Randagen-app` = (project in file("app"))
   .enablePlugins(CommonPlugin, DockerPlugin)
   .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
   .settings(publish := { })
-  .settings(deploy(DeployDef(config("app") extend Compile, "openjdk:9", "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp")))
+  .settings(deploy(DeployDef(config("app") extend Compile, javaDockerImage, "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp")))
   .dependsOn(`Randagen-core` % "compile->compile;test->test")
