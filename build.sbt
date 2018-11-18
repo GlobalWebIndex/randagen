@@ -1,23 +1,22 @@
+import Dependencies._
+import Deploy._
 
-version in ThisBuild := "0.1.6"
+lazy val s3Resolver = "S3 Snapshots" at "s3://public.maven.globalwebindex.net.s3-eu-west-1.amazonaws.com/snapshots"
+
 crossScalaVersions in ThisBuild := Seq("2.12.6", "2.11.8")
 organization in ThisBuild := "net.globalwebindex"
+resolvers in ThisBuild += "Maven Central Google Mirror EU" at "https://maven-central-eu.storage-download.googleapis.com/repos/central/data/"
+version in ThisBuild ~= (_.replace('+', '-'))
+dynver in ThisBuild ~= (_.replace('+', '-'))
+cancelable in ThisBuild := true
 
-lazy val javaDockerImage  = "anapsix/alpine-java:8u144b01_jdk_unlimited"
-
-lazy val randagen = (project in file("."))
-  .settings(aggregate in update := false)
-  .settings(publish := {})
-  .aggregate(`Randagen-core`, `Randagen-app`)
-
-lazy val `Randagen-core` = (project in file("core"))
-  .enablePlugins(CommonPlugin)
+lazy val core = (project in file("core"))
   .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
   .settings(publishSettings("GlobalWebIndex", "randagen", s3Resolver))
 
-lazy val `Randagen-app` = (project in file("app"))
-  .enablePlugins(CommonPlugin, DockerPlugin)
-  .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
+lazy val app = (project in file("app"))
+  .enablePlugins(DockerPlugin, SmallerDockerPlugin, JavaAppPackaging)
   .settings(publish := { })
-  .settings(deploy(DeployDef(config("app") extend Compile, javaDockerImage, "gwiq", "randagen", "gwi.randagen.app.RanDaGenApp")))
-  .dependsOn(`Randagen-core` % "compile->compile;test->test")
+  .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
+  .settings(Deploy.settings("gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
+  .dependsOn(core % "compile->compile;test->test")

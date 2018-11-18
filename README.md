@@ -1,6 +1,6 @@
 **High performance generator of data**
 
-[![Build Status](https://travis-ci.org/GlobalWebIndex/randagen.svg?branch=master)](https://travis-ci.org/GlobalWebIndex/randagen)
+[![DroneCI](https://drone.globalwebindex.net/api/badges/GlobalWebIndex/randagen/status.svg)](https://drone.globalwebindex.net/GlobalWebIndex/randagen)
 
 It is able to generate data :
  - randomly distributed
