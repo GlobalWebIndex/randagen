@@ -29,7 +29,7 @@ pipeline:
   publish-maven-artifacts:
     image: gwiq/sbt-docker:1.2.4
     commands:
-      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 ${APP}/publish
+      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 randagen-${APP}/publish
     secrets:
       - source: aws_access_key_id
         target: aws_access_key_id
@@ -46,7 +46,7 @@ pipeline:
   stage-docker-image:
     image: gwiq/sbt-docker:1.2.4
     commands:
-      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 ${APP}/docker:stage
+      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 randagen-${APP}/docker:stage
     when:
       event: [deployment, tag]
       matrix:
