@@ -12,6 +12,7 @@ cancelable in ThisBuild := true
 
 lazy val `randagen-core` = (project in file("core"))
   .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
+  .settings(stage in Docker := null)
   .settings(publishSettings("GlobalWebIndex", "randagen", s3Resolver))
 
 lazy val `randagen-app` = (project in file("app"))

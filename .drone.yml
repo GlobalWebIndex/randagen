@@ -40,8 +40,7 @@ pipeline:
     when:
       event: [deployment, tag]
       matrix:
-        APP:
-          - core
+        APP: core
 
   stage-docker-image:
     image: gwiq/sbt-docker:latest
