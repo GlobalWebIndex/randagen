@@ -9,15 +9,15 @@ resolvers in ThisBuild += "Maven Central Google Mirror EU" at "https://maven-cen
 version in ThisBuild ~= (_.replace('+', '-'))
 dynver in ThisBuild ~= (_.replace('+', '-'))
 cancelable in ThisBuild := true
+publishArtifact in ThisBuild := false
+stage in (ThisBuild, Docker) := null
 
 lazy val `randagen-core` = (project in file("core"))
   .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
-  .settings(stage in Docker := null)
   .settings(publishSettings("GlobalWebIndex", "randagen", s3Resolver))
 
 lazy val `randagen-app` = (project in file("app"))
   .enablePlugins(DockerPlugin, SmallerDockerPlugin, JavaAppPackaging)
-  .settings(publish := { })
   .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
   .settings(Deploy.settings("gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
   .dependsOn(`randagen-core` % "compile->compile;test->test")
