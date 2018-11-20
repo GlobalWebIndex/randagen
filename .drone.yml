@@ -50,7 +50,7 @@ pipeline:
       event: [push, deployment, tag]
 
   build-on-deploy:
-    image: gwiq/sbt-docker:latest
+    image: docker:stable
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker:/root/.docker
@@ -76,7 +76,7 @@ pipeline:
       event: deployment
 
   build-on-tag:
-    image: gwiq/sbt-docker:latest
+    image: docker:stable
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker:/root/.docker
