@@ -1,6 +1,7 @@
 **High performance generator of data**
 
 [![DroneCI](https://drone.globalwebindex.net/api/badges/GlobalWebIndex/randagen/status.svg)](https://drone.globalwebindex.net/GlobalWebIndex/randagen)
+[![randagen-core](https://api.bintray.com/packages/l15k4/GlobalWebIndex/randagen-core/images/download.svg) ](https://bintray.com/l15k4/GlobalWebIndex/randagen-core/_latestVersion)
 
 It is able to generate data :
  - randomly distributed
