@@ -40,7 +40,7 @@ Then you're all set, use `gwiq/randagen` docker image with sample data definitio
  - don't forget to change `-Xmx` appropriately 
 
 ```
-docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e JAVA_TOOL_OPTIONS=-Xmx4g gwiq/randagen ARGS
+docker run --rm --env-file=/home/ubuntu/.aws/aws.env -v /home/ubuntu/tmp:/tmp -e JAVA_TOOL_OPTIONS=-Xmx4g gwiq/randagen-app ARGS
 ```
 
 Just use real arguments instead of `ARGS` ^, usage :
