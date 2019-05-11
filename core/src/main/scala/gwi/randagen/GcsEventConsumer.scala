@@ -16,8 +16,12 @@ case class GcsEventConsumer(bucket: String, path: String, storage: Storage, comp
     }
     val blobId = BlobId.of(bucket, fullPath)
     val data = if (compress) gzip(bytes) else bytes
-    val contentType = if (compress) "gzip" else "text/plain"
-    val blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build()
+    val blobInfoBuilder = BlobInfo.newBuilder(blobId).setContentType("text/plain")
+    val blobInfo =
+      if (compress)
+        blobInfoBuilder.setContentEncoding("gzip").build()
+      else
+        blobInfoBuilder.build()
     Try(storage.create(blobInfo, data))
       .map(_ => ConsumerResponse(id, key, bytes.length, System.currentTimeMillis() - start)).get
   }
