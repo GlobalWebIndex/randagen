@@ -25,6 +25,7 @@ object Dependencies {
 
   lazy val commonsMath                  = "org.apache.commons"            %     "commons-math3"                      % "3.6.1"
   lazy val awsS3                        = "com.amazonaws"                 %     "aws-java-sdk-s3"                    % "1.11.413"
+  lazy val gcs                          = "com.google.cloud"              %     "google-cloud-storage"               % "1.70.0"
   lazy val scalatest                    = "org.scalatest"                 %%    "scalatest"                          % "3.0.5"                 % "test"
 
 }

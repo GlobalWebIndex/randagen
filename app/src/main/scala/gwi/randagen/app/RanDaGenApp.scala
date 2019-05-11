@@ -11,9 +11,9 @@ object RanDaGenApp extends CliMain[Unit](name = "randagen") {
   var batchFlushMegabytesLimit = arg[Double](name = "batch-flush-megabytes-limit", description = "When to flush in-memory data to disk or network", required = false, default = 50)
   var recordsCount = arg[Int](name = "records-count", "How many records to generate")
   var parallelism = arg[Int](description = "How many threads should be leveraged for data generation")
-  var storage = arg[String](description = "[ s3 | fs ]")
+  var storage = arg[String](description = "[ s3 | gcs | fs ]")
   var compress = arg[Boolean](description = "Whether to gzip output or not")
-  var path = arg[String](description = "S3 of FS path: [ bucket@foo/bar  | /tmp/data ]")
+  var path = arg[String](description = "blob or FS path: [ bucket@foo/bar | /tmp/data ]")
 
   def run: Unit = {
     val future =

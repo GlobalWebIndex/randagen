@@ -23,12 +23,16 @@ It is able to generate data :
  
 ## How to
 
-Data can be generated to s3, if you do so, you should have these variables exported or stored in file :
+Data can be generated to blob storages, if you do so, you should have these variables exported or stored in file :
 ```
 $ cat ~/.aws/aws.env 
 AWS_ACCESS_KEY_ID=???
 AWS_SECRET_ACCESS_KEY=???
 AWS_DEFAULT_REGION=???
+```
+or in case of google :
+```
+GOOGLE_APPLICATION_CREDENTIALS=???
 ```
 
 Then you're all set, use `gwiq/randagen` docker image with sample data definition :
@@ -50,7 +54,7 @@ Arguments
    <batch-flush-megabytes-limit> : When to flush in-memory data to disk or network
    <records-count>               : How many records to generate
    <parallelism>                 : How many threads should be leveraged for data generation
-   <storage>                     : [ s3 | fs ]
+   <storage>                     : [ s3 | gcs | fs ]
    <compress>                    : Whether to gzip output or not
    <path>                        : S3 of FS path: [ bucket@foo/bar  | /tmp/data ]
 ```

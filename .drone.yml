@@ -33,12 +33,6 @@ pipeline:
         target: bintray_user
       - source: bintray_pass
         target: bintray_pass
-      - source: aws_access_key_id
-        target: aws_access_key_id
-      - source: aws_secret_access_key
-        target: aws_secret_access_key
-      - source: aws_region
-        target: aws_region
     when:
       event: [deployment, tag]
 
@@ -65,12 +59,6 @@ pipeline:
         target: docker_user
       - source: docker_password
         target: docker_password
-      - source: aws_access_key_id
-        target: aws_access_key_id
-      - source: aws_secret_access_key
-        target: aws_secret_access_key
-      - source: aws_region
-        target: aws_region
     commands:
       - docker build -t local/randagen-app:$DRONE_COMMIT_SHA app/target/docker/stage
       - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
@@ -92,12 +80,6 @@ pipeline:
         target: docker_user
       - source: docker_password
         target: docker_password
-      - source: aws_access_key_id
-        target: aws_access_key_id
-      - source: aws_secret_access_key
-        target: aws_secret_access_key
-      - source: aws_region
-        target: aws_region
     commands:
       - docker build -t local/randagen-app:$RELEASE app/target/docker/stage
       - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"

@@ -11,7 +11,7 @@ publishArtifact in ThisBuild := false
 stage in (ThisBuild, Docker) := null
 
 lazy val `randagen-core` = (project in file("core"))
-  .settings(libraryDependencies ++= Seq(awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
+  .settings(libraryDependencies ++= Seq(gcs, awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
   .settings(bintraySettings("GlobalWebIndex", "randagen"))
 
 lazy val `randagen-app` = (project in file("app"))
