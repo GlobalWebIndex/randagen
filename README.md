@@ -1,6 +1,6 @@
 **High performance generator of data**
 
-[![Build Status](https://drone.in.globalwebindex.com/api/badges/GlobalWebIndex/randagen/status.svg)](https://drone.globalwebindex.com/GlobalWebIndex/randagen)
+[![Build Status](https://drone.globalwebindex.com/api/badges/GlobalWebIndex/randagen/status.svg)](https://drone.in.globalwebindex.com/GlobalWebIndex/randagen)
 [![randagen-core](https://api.bintray.com/packages/gwidx/maven/randagen-core/images/download.svg) ](https://bintray.com/gwidx/maven/randagen-core/_latestVersion)
 
 It is able to generate data :
