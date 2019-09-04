@@ -1,90 +1,137 @@
+kind: pipeline
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
 clone:
-  git:
-    image: plugins/git
+  disable: true
+
+steps:
+- name: git
+  pull: default
+  image: plugins/git
+  settings:
     depth: 50
     tags: true
 
-pipeline:
-
-  restore-cache:
-    image: drillster/drone-volume-cache
+- name: restore-cache
+  pull: default
+  image: drillster/drone-volume-cache
+  settings:
+    mount:
+    - ./.ivy2
+    - ./.coursier
     restore: true
+  volumes:
+  - name: cache
+    path: /cache
+  when:
+    event:
+    - push
+    - promote
+    - tag
+
+#- name: run-tests
+#  pull: default
+#  image: gwiq/sbt-docker:latest
+#  commands:
+#  - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 -Dsbt.gigahorse=false test
+#  when:
+#    event:
+#    - promote
+#    - tag
+#    - push
+
+#- name: publish-artifacts-and-stage-image
+#  pull: default
+#  image: gwiq/sbt-docker:latest
+#  commands:
+#  - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 randagen-core/publish randagen-app/docker:stage
+#  environment:
+#    BINTRAY_PASS:
+#      from_secret: bintray_pass
+#    BINTRAY_USER:
+#      from_secret: bintray_user
+#  when:
+#    event:
+#    - promote
+#    - tag
+
+- name: rebuild-cache
+  pull: default
+  image: drillster/drone-volume-cache
+  settings:
     mount:
-      - ./.ivy2
-      - ./.coursier
-    volumes:
-      - /tmp/cache:/cache
-    when:
-      event: [push, deployment, tag]
-
-  run-tests:
-    image: gwiq/sbt-docker:latest
-    commands:
-      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 -Dsbt.gigahorse=false test
-    when:
-      event: [deployment, tag, push]
-
-  publish-artifacts-and-stage-image:
-    image: gwiq/sbt-docker:latest
-    commands:
-      - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 randagen-core/publish randagen-app/docker:stage
-    secrets:
-      - source: bintray_user
-        target: bintray_user
-      - source: bintray_pass
-        target: bintray_pass
-    when:
-      event: [deployment, tag]
-
-  rebuild-cache:
-    image: drillster/drone-volume-cache
+    - ./.ivy2
+    - ./.coursier
     rebuild: true
-    mount:
-      - ./.ivy2
-      - ./.coursier
-    volumes:
-      - /tmp/cache:/cache
-    when:
-      event: [push, deployment, tag]
+  volumes:
+  - name: cache
+    path: /cache
+  when:
+    event:
+    - push
+    - promote
+    - tag
 
-  build-on-deploy:
-    image: docker:stable
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /root/.docker:/root/.docker
-    environment:
-      - IMAGE_NAME=gwiq/randagen-app
-    secrets:
-      - source: docker_user
-        target: docker_user
-      - source: docker_password
-        target: docker_password
-    commands:
-      - docker build -t local/randagen-app:$DRONE_COMMIT_SHA app/target/docker/stage
-      - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-      - docker tag local/randagen-app:$DRONE_COMMIT_SHA $IMAGE_NAME:$DRONE_COMMIT_SHA
-      - docker push $IMAGE_NAME:$DRONE_COMMIT_SHA
-    when:
-      event: deployment
+- name: build-on-deploy
+  pull: default
+  image: docker:stable
+  commands:
+  - docker build -t local/randagen-app:$DRONE_COMMIT_SHA app/target/docker/stage
+  - "docker login -u \"$DOCKER_USER\" -p \"$DOCKER_PASSWORD\""
+  - docker tag local/randagen-app:$DRONE_COMMIT_SHA $IMAGE_NAME:$DRONE_COMMIT_SHA
+  - docker push $IMAGE_NAME:$DRONE_COMMIT_SHA
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: gwiq/randagen-app
+  volumes:
+  - name: docker.sock
+    path: /var/run/docker.sock
+  - name: docker
+    path: /root/.docker
+  when:
+    event:
+    - promote
 
-  build-on-tag:
-    image: docker:stable
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /root/.docker:/root/.docker
-    environment:
-      - IMAGE_NAME=gwiq/randagen-app
-      - RELEASE=${DRONE_TAG##v}
-    secrets:
-      - source: docker_user
-        target: docker_user
-      - source: docker_password
-        target: docker_password
-    commands:
-      - docker build -t local/randagen-app:$RELEASE app/target/docker/stage
-      - docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD"
-      - docker tag local/randagen-app:$RELEASE $IMAGE_NAME:$RELEASE
-      - docker push $IMAGE_NAME:$RELEASE
-    when:
-      branch: master
-      event: tag
+- name: build-on-tag
+  pull: default
+  image: docker:stable
+  commands:
+  - docker build -t local/randagen-app:$RELEASE app/target/docker/stage
+  - "docker login -u \"$DOCKER_USER\" -p \"$DOCKER_PASSWORD\""
+  - docker tag local/randagen-app:$RELEASE $IMAGE_NAME:$RELEASE
+  - docker push $IMAGE_NAME:$RELEASE
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: gwiq/randagen-app
+    RELEASE: "${DRONE_TAG##v}"
+  volumes:
+  - name: docker.sock
+    path: /var/run/docker.sock
+  - name: docker
+    path: /root/.docker
+  when:
+    branch:
+    - master
+    event:
+    - tag
+
+volumes:
+- name: cache
+  host:
+    path: /tmp/cache
+- name: docker.sock
+  host:
+    path: /var/run/docker.sock
+- name: docker
+  host:
+    path: /root/.docker
