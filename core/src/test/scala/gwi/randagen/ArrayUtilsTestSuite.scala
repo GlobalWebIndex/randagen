@@ -1,9 +1,11 @@
 package gwi.randagen
 
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-class ArrayUtilsTestSuite extends FreeSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
+class ArrayUtilsTestSuite extends AnyFreeSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
   import gwi.randagen.ArrayUtils.IntArrayPimp
 
   "flattening array should work" in {
