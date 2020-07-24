@@ -1,7 +1,7 @@
 import Dependencies._
 import Deploy._
 
-crossScalaVersions in ThisBuild := Seq("2.12.11", "2.11.8")
+crossScalaVersions in ThisBuild := Seq("2.13.3", "2.12.12")
 organization in ThisBuild := "net.globalwebindex"
 resolvers in ThisBuild += "Maven Central Google Mirror EU" at "https://maven-central-eu.storage-download.googleapis.com/repos/central/data/"
 version in ThisBuild ~= (_.replace('+', '-'))

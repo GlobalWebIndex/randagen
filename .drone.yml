@@ -46,7 +46,7 @@ steps:
   pull: default
   image: gwiq/sbt-docker:latest
   commands:
-  - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 randagen-core/publish randagen-app/docker:stage
+  - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 +randagen-core/publish +randagen-app/docker:stage
   environment:
     BINTRAY_PASS:
       from_secret: bintray_pass
