@@ -14,7 +14,7 @@ lazy val `randagen-core` = (project in file("core"))
   .settings(Deploy.publishSettings("GlobalWebIndex", "randagen"))
 
 lazy val `randagen-app` = (project in file("app"))
-  .enablePlugins(DockerPlugin, SmallerDockerPlugin, JavaAppPackaging)
+  .enablePlugins(DockerPlugin, JavaAppPackaging)
   .settings(libraryDependencies ++= clist ++ loggingApi ++ Seq(loggingImplLogback))
   .settings(Deploy.settings("gwiq", "randagen", "gwi.randagen.app.RanDaGenApp"))
   .dependsOn(`randagen-core` % "compile->compile;test->test")
