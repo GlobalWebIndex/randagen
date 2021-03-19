@@ -7,6 +7,7 @@ version in ThisBuild ~= (_.replace('+', '-'))
 dynver in ThisBuild ~= (_.replace('+', '-'))
 cancelable in ThisBuild := true
 publishArtifact in ThisBuild := false
+credentials in ThisBuild ++= sys.env.get("GITHUB_TOKEN").map(Credentials("GitHub Package Registry", "maven.pkg.github.com", "dmp-team", _))
 stage in (ThisBuild, Docker) := null
 
 lazy val `randagen-core` = (project in file("core"))

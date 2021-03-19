@@ -21,14 +21,12 @@ object Deploy {
   }
 
   def publishSettings(ghOrganizationName: String, ghProjectName: String) = Seq(
-    credentials ++= sys.env.get("GITHUB_TOKEN").map(Credentials("GitHub Package Registry", "maven.pkg.github.com", "dmp-team", _)),
     publishArtifact := true,
     publishMavenStyle := true,
     publishArtifact in Test := false,
     publishTo := Some("GitHub Package Registry" at s"https://maven.pkg.github.com/$ghOrganizationName/$ghProjectName"),
     organization := "net.globalwebindex",
-    homepage := Some(url(
-      s"https://github.com/$ghOrganizationName/$ghProjectName/blob/master/README.md")),
+    homepage := Some(url(s"https://github.com/$ghOrganizationName/$ghProjectName/blob/master/README.md")),
     licenses in ThisBuild += ("MIT", url("http://opensource.org/licenses/MIT")),
     developers += Developer("l15k4",
                             "Jakub Liska",
