@@ -1,19 +1,10 @@
-import bintray.BintrayKeys._
-import sbt.Keys._
-import sbt._
-import net.globalwebindex.sbt.docker.SmallerDockerPlugin.autoImport._
+import com.typesafe.sbt.SbtNativePackager.autoImport._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import com.typesafe.sbt.packager.linux.LinuxPlugin.autoImport._
-import com.typesafe.sbt.SbtNativePackager.autoImport._
+import sbt.Keys._
+import sbt._
 
 object Deploy {
-
-  private[this] def isFrequentlyChangingFile(file: sbt.File): Boolean = {
-    val fileName = file.name
-    if (fileName.startsWith("net.globalwebindex")) true
-    else if (fileName.endsWith(".jar")) false
-    else true
-  }
 
   def settings(repository: String,
                appName: String,
@@ -26,13 +17,15 @@ object Deploy {
       mainClass in Compile := Some(mainClassFqn),
       defaultLinuxInstallLocation in Docker := s"/opt/$appName",
       dockerUpdateLatest in Docker := false
-    ) ++ smallerDockerSettings(isFrequentlyChangingFile)
+    )
   }
 
-  def bintraySettings(ghOrganizationName: String, ghProjectName: String) = Seq(
+  def publishSettings(ghOrganizationName: String, ghProjectName: String) = Seq(
+    credentials ++= sys.env.get("GITHUB_TOKEN").map(Credentials("GitHub Package Registry", "maven.pkg.github.com", "dmp-team", _)),
     publishArtifact := true,
     publishMavenStyle := true,
     publishArtifact in Test := false,
+    publishTo := Some("GitHub Package Registry" at s"https://maven.pkg.github.com/$ghOrganizationName/$ghProjectName"),
     organization := "net.globalwebindex",
     homepage := Some(url(
       s"https://github.com/$ghOrganizationName/$ghProjectName/blob/master/README.md")),
@@ -44,10 +37,6 @@ object Deploy {
     scmInfo := Some(
       ScmInfo(url(s"https://github.com/$ghOrganizationName/$ghProjectName"),
               s"git@github.com:$ghOrganizationName/$ghProjectName.git")),
-    bintrayVcsUrl := Some(
-      s"git@github.com:$ghOrganizationName/$ghProjectName.git"),
-    bintrayRepository := "maven",
-    bintrayOrganization := Some("gwidx"),
     pomIncludeRepository := { _ =>
       false
     },
