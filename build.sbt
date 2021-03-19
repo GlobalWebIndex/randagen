@@ -1,5 +1,4 @@
 import Dependencies._
-import Deploy._
 
 crossScalaVersions in ThisBuild := Seq("2.13.3", "2.12.12")
 organization in ThisBuild := "net.globalwebindex"
@@ -12,7 +11,7 @@ stage in (ThisBuild, Docker) := null
 
 lazy val `randagen-core` = (project in file("core"))
   .settings(libraryDependencies ++= Seq(gcs, awsS3, commonsMath, loggingImplLogback % "provided", scalatest) ++ loggingApi ++ jackson.map(_ % "test"))
-  .settings(bintraySettings("GlobalWebIndex", "randagen"))
+  .settings(Deploy.publishSettings("GlobalWebIndex", "randagen"))
 
 lazy val `randagen-app` = (project in file("app"))
   .enablePlugins(DockerPlugin, SmallerDockerPlugin, JavaAppPackaging)

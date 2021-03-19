@@ -38,6 +38,9 @@ steps:
   image: gwiq/sbt-docker:latest
   commands:
   - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 -Dsbt.gigahorse=false test
+  environment:
+    DMP_TEAM_GITHUB_TOKEN:
+      from_secret: dmp_team_github_token
   when:
     event:
     - push
@@ -48,10 +51,8 @@ steps:
   commands:
   - sbt -mem 1024 -Djline.terminal=off -Dcoursier.cache=./.coursier -Dsbt.ivy.home=./.ivy2 -Dfile.encoding=utf-8 +randagen-core/publish +randagen-app/docker:stage
   environment:
-    BINTRAY_PASS:
-      from_secret: bintray_pass
-    BINTRAY_USER:
-      from_secret: bintray_user
+    DMP_TEAM_GITHUB_TOKEN:
+      from_secret: dmp_team_github_token
   when:
     event:
     - promote

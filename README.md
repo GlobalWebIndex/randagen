@@ -1,7 +1,6 @@
 **High performance generator of data**
 
 [![Build Status](https://drone.globalwebindex.com/api/badges/GlobalWebIndex/randagen/status.svg)](https://drone.in.globalwebindex.com/GlobalWebIndex/randagen)
-[![randagen-core](https://api.bintray.com/packages/gwidx/maven/randagen-core/images/download.svg) ](https://bintray.com/gwidx/maven/randagen-core/_latestVersion)
 
 It is able to generate data :
  - randomly distributed
@@ -75,6 +74,7 @@ Note ^^^ that
 Or use it as a dependency / project / library :
 
 ```
+resolvers ++= Seq("GitHub Package Registry (GlobalWebIndex/randagen)" at s"https://maven.pkg.github.com/GlobalWebIndex/randagen")
 libraryDependencies += "net.globalwebindex" %% "randagen" % "x.y.x"
 ```
 or
