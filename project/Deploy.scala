@@ -26,6 +26,7 @@ object Deploy {
     publishArtifact in Test := false,
     publishTo := Some("GitHub Package Registry" at s"https://maven.pkg.github.com/$ghOrganizationName/$ghProjectName"),
     organization := "net.globalwebindex",
+    credentials ++= sys.env.get("DMP_TEAM_GITHUB_TOKEN").map(Credentials("GitHub Package Registry", "maven.pkg.github.com", "dmp-team", _)),
     homepage := Some(url(s"https://github.com/$ghOrganizationName/$ghProjectName/blob/master/README.md")),
     licenses in ThisBuild += ("MIT", url("http://opensource.org/licenses/MIT")),
     developers += Developer("l15k4",
