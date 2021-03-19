@@ -1,18 +1,10 @@
 import com.typesafe.sbt.SbtNativePackager.autoImport._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import com.typesafe.sbt.packager.linux.LinuxPlugin.autoImport._
-import net.globalwebindex.sbt.docker.SmallerDockerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 
 object Deploy {
-
-  private[this] def isFrequentlyChangingFile(file: sbt.File): Boolean = {
-    val fileName = file.name
-    if (fileName.startsWith("net.globalwebindex")) true
-    else if (fileName.endsWith(".jar")) false
-    else true
-  }
 
   def settings(repository: String,
                appName: String,
@@ -25,7 +17,7 @@ object Deploy {
       mainClass in Compile := Some(mainClassFqn),
       defaultLinuxInstallLocation in Docker := s"/opt/$appName",
       dockerUpdateLatest in Docker := false
-    ) ++ smallerDockerSettings(isFrequentlyChangingFile)
+    )
   }
 
   def publishSettings(ghOrganizationName: String, ghProjectName: String) = Seq(
